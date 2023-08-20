@@ -64,13 +64,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 
-    // Überprüfen, ob es sich bei der Interaktion um einen Button-Click handelt
+    // check if the interaction is a button interaction
     else if (interaction.isButton()) {
         const buttonId = interaction.customId;
 
-        // Überprüfen, ob es sich um einen unserer definierten Buttons handelt
+        // check if the button is one of the three buttons
         if (['agree', 'disagree', 'neutral'].includes(buttonId)) {
-            await interaction.deferReply({ ephemeral: true }); // Antwortet verzögert auf die Interaktion
+            await interaction.deferReply({ ephemeral: true }); // Defer the reply to avoid the "This interaction failed" error
             testCommand.sendQuestion(interaction)
         }
     }
