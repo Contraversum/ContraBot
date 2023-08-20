@@ -1,5 +1,6 @@
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { token } from './config.json';
+import * as testCommand from './commands/test/test-command';
 import fs from 'fs'
 import path from 'path'
 
@@ -36,29 +37,41 @@ for (const folder of commandFolders) {
 
 // Catch command errors
 client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    // Handle Slash commands
+    if (interaction.isChatInputCommand()) {
+        const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
 
-    const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
+        }
 
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
-        return;
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: 'There was an error while executing this command!',
+                    ephemeral: true,
+                });
+            } else {
+                await interaction.reply({
+                    content: 'There was an error while executing this command!',
+                    ephemeral: true,
+                });
+            }
+        }
     }
 
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({
-                content: 'There was an error while executing this command!',
-                ephemeral: true,
-            });
-        } else {
-            await interaction.reply({
-                content: 'There was an error while executing this command!',
-                ephemeral: true,
-            });
+    // Überprüfen, ob es sich bei der Interaktion um einen Button-Click handelt
+    else if (interaction.isButton()) {
+        const buttonId = interaction.customId;
+
+        // Überprüfen, ob es sich um einen unserer definierten Buttons handelt
+        if (['agree', 'disagree', 'neutral'].includes(buttonId)) {
+            await interaction.deferReply({ ephemeral: true }); // Antwortet verzögert auf die Interaktion
+            testCommand.sendQuestion(interaction)
         }
     }
 });
