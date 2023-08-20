@@ -3,7 +3,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 const question = (interaction: any) => {
     const embed = new EmbedBuilder()
         .setTitle("Fragen")
-        .setDescription("👍: Ich stimme zu\n🤩: Ich stimme zu (doppelt gewichtet)\n👎: Ich stimme nicht zu\n🤢: Ich stimme nicht zu (doppelt gewichtet)\n➖: Ist mir egal!")
+        .setDescription("👍: Ich stimme zu\n👎: Ich stimme nicht zu\n➖: Ist mir egal!")
         .setFooter({ text: "Provided by Contraversum", iconURL: "https://cdn.sstatic.net/Img/teams/teams-illo-free-sidebar-promo.svg?v=47faa659a05e" }) //TODO: Add Contraversum logo
         .setColor('#f55a00') //TODO: Do we have a brand color? If so, use it here
 
@@ -13,17 +13,9 @@ const question = (interaction: any) => {
             .setStyle(ButtonStyle.Success)
             .setEmoji("👍"),
         new ButtonBuilder()
-            .setCustomId(`like_twice`)
-            .setStyle(ButtonStyle.Success)
-            .setEmoji("🤩"),
-        new ButtonBuilder()
             .setCustomId(`dislike`)
             .setStyle(ButtonStyle.Danger)
             .setEmoji("👎"),
-        new ButtonBuilder()
-            .setCustomId(`dislike_twice`)
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji("🤢"),
         new ButtonBuilder()
             .setCustomId(`neutral`)
             .setStyle(ButtonStyle.Secondary)
