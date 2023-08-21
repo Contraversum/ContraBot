@@ -1,6 +1,7 @@
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { token } from './config.json';
 import * as testCommand from './commands/test/test-command';
+import { userResponses } from './commands/test/test-command';
 import fs from 'fs'
 import path from 'path'
 
@@ -64,14 +65,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 
-    // check if the interaction is a button interaction
-    else if (interaction.isButton()) {
-        const buttonId = interaction.customId;
+   // check if the interaction is a button interaction
+else if (interaction.isButton()) {
+    const buttonId = interaction.customId;
 
-        // check if the button is one of the three buttons
-        if (['agree', 'disagree', 'neutral'].includes(buttonId)) {
-            await interaction.deferReply({ ephemeral: true }); // Defer the reply to avoid the "This interaction failed" error
-            testCommand.sendQuestion(interaction)
-        }
+    // check if the button is one of the three buttons
+    if (['agree', 'disagree', 'neutral'].includes(buttonId)) {
+        await interaction.deferReply({ ephemeral: true }); // Defer the reply to avoid the "This interaction failed" error
+        if (buttonId === 'agree') userResponses.push(1);
+        else if (buttonId === 'disagree') userResponses.push(-1);
+        else if (buttonId === 'neutral') userResponses.push(0);
+
+        testCommand.sendQuestion(interaction)
     }
+}
 });

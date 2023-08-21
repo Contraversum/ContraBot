@@ -43,6 +43,7 @@ const questions = [
 ];
 
 let currentQuestionIndex = 0;
+let userResponses: number[] = [];
 
 const sendQuestion = (interaction: any) => {
     if (currentQuestionIndex < questions.length) {
@@ -74,6 +75,8 @@ const sendQuestion = (interaction: any) => {
         currentQuestionIndex++; // Move to the next question
     } else {
         interaction.user.send("Thank you for answering all the questions!");
+        console.log(userResponses);
+        const userVector = userResponses;
     }
 }
 
@@ -87,3 +90,4 @@ export const execute = async (interaction: any) => {
 };
 
 export { sendQuestion };
+export { userResponses };
