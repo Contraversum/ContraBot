@@ -71,9 +71,9 @@ const sendQuestion = (interaction: any) => {
             components: [builder]
         });
 
-        currentQuestionIndex++; // Move to the next question
+        currentQuestionIndex++;
     } else {
-        interaction.user.send("Thank you for answering all the questions!");
+        interaction.user.send("Danke, dass du den Test ausgefüllt hast! Dein Gesprächspartner wird dir zugesendet werden.");
         console.log(userResponses);
         const userVector = userResponses;
     }
