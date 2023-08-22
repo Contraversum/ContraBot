@@ -81,3 +81,5 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 }
 );
+
+export { client };
