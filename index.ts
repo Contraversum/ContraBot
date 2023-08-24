@@ -79,6 +79,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
             else if (buttonId === 'neutral') userResponses.push(0);
 
             await interaction.deferUpdate();
+             // Push the updated userResponses array to the database
+             db.db('contrabot').collection("users").updateOne({ userId: interaction.user.id }, {
+                $set: {
+                    userVector: userResponses
+                }
+            });
             testCommand.sendQuestion(interaction)
         }
     }

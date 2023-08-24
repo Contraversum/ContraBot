@@ -46,6 +46,16 @@ let currentQuestionIndex = 0;
 let userResponses: number[] = [];
 
 const sendQuestion = async (interaction: any) => {
+    if (currentQuestionIndex === 0) {
+        // create a new user in the db using upsert = true  
+        db.db('contrabot').collection("users").updateOne({ userId: interaction.user.id }, {
+            $set: {
+                userId: interaction.user.id,
+                userVector: []
+            }
+        }, { upsert: true })
+    } 
+
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle("Frage:")
@@ -77,12 +87,8 @@ const sendQuestion = async (interaction: any) => {
         interaction.user.send("Danke, dass du den Test ausgefüllt hast! Dein Gesprächspartner wird dir zugesendet werden.");
         console.log(userResponses);
 
-        db.db('contrabot').collection("users").updateOne({ userId: interaction.user.id }, {
-            $set: {
-                userId: interaction.user.id,
-                userVector: userResponses
-            }
-        }, { upsert: true })
+        currentQuestionIndex = 0;
+        userResponses = [];
 
         // db.db('contrabot').collection("users").findOne({ userId: interaction.user.id })
         // await db.db('contrabot').collection("users").find({}).toArray()
