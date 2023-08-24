@@ -4,15 +4,18 @@ import * as testCommand from './commands/test/test-command';
 import { userResponses } from './commands/test/test-command';
 import fs from 'fs'
 import path from 'path'
+import { MongoClient } from "mongodb";
 
+export const db = new MongoClient("mongodb://localhost:27017/");
 interface ClientWithCommands extends Client {
     commands: Collection<string, any>
 }
 
 const client = new Client({ intents: [ GatewayIntentBits.Guilds ] }) as ClientWithCommands;
 
-client.on(Events.ClientReady, (c) => {
+client.on(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
+    await db.connect();
 });
 
 client.login(token);
@@ -65,19 +68,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 
-   // check if the interaction is a button interaction
-   else if (interaction.isButton()) {
-    const buttonId = interaction.customId;
+    // check if the interaction is a button interaction
+    else if (interaction.isButton()) {
+        const buttonId = interaction.customId;
 
-    // check if the button is one of the three buttons
-    if (['agree', 'disagree', 'neutral'].includes(buttonId)) {
-        if (buttonId === 'agree') userResponses.push(1);
-        else if (buttonId === 'disagree') userResponses.push(-1);
-        else if (buttonId === 'neutral') userResponses.push(0);
+        // check if the button is one of the three buttons
+        if ([ 'agree', 'disagree', 'neutral' ].includes(buttonId)) {
+            if (buttonId === 'agree') userResponses.push(1);
+            else if (buttonId === 'disagree') userResponses.push(-1);
+            else if (buttonId === 'neutral') userResponses.push(0);
 
-        await interaction.deferUpdate();
-        testCommand.sendQuestion(interaction)
-    }
+            await interaction.deferUpdate();
+            testCommand.sendQuestion(interaction)
+        }
     }
 }
 );
