@@ -87,6 +87,11 @@ const sendQuestion = async (interaction: any) => {
         interaction.user.send("Danke, dass du den Test ausgefüllt hast! Dein Gesprächspartner wird dir zugesendet werden.");
         console.log(userResponses);
 
+        const bestMatch = await findMatchingUser(interaction.user.id);
+        if (bestMatch) {
+            interaction.user.send(`Danke, dass du den Test ausgefüllt hast! Dein bester Gesprächspartner ist: ${bestMatch}.`);
+        }
+
         currentQuestionIndex = 0;
         userResponses = [];
 
@@ -95,6 +100,28 @@ const sendQuestion = async (interaction: any) => {
 
         verifyUser(interaction);
     }
+}
+
+async function findMatchingUser(userId: string): Promise<string | null> {
+    const users = await db.db('contrabot').collection("users").find({}).toArray();
+
+    let closestUserId: string | null = null;
+    let closestValue = Infinity;  // Start with a very large value
+
+    for (const user of users) {
+        // Skip comparing with oneself
+        if (user.userId === userId) continue;
+
+        const dotProduct = userResponses.reduce((acc, value, index) => acc + value * user.userVector[index], 0);
+        const distanceFromZero = Math.abs(dotProduct);
+
+        if (distanceFromZero < closestValue) {
+            closestValue = distanceFromZero;
+            closestUserId = user.userId;
+        }
+    }
+
+    return closestUserId;
 }
 
 function verifyUser(interaction: any) {
