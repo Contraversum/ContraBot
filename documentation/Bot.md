@@ -8,3 +8,4 @@ It then starts by iterating over an array containing the questions. After a user
 After the bot has iterated through all the questions, it sends a final message. It then compares the vector of the new user to the vectors of previous users using the dot product. The algorithm identifies a user whose dot product result is closest to 0.
 
 The bot then sends a message informing the new user of their closest match.
+At last the user will get the 'verified' role on the sever so that he can interact.
