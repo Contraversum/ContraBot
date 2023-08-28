@@ -18,7 +18,7 @@ client.on(Events.ClientReady, async (c) => {
     await db.connect();
 });
 
-client.login(token);
+client.login(token); // Log in to the bot
 
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
