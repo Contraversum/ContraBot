@@ -122,27 +122,52 @@ const sendQuestion = async (interaction: any) => {
 }
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
-    const users = await db.db('contrabot').collection("users").find({}).toArray();
-
-    let closestUser: { userId: string, username: string } | null = null;
-    let closestValue = Infinity;
-
-    for (const user of users) {
-        if (user.userId === userId) continue;
-
-        const dotProduct = userResponses.reduce((acc, value, index) => acc + value * user.userVector[index], 0);
-        const distanceFromZero = Math.abs(dotProduct);
-
-        if (distanceFromZero < closestValue) {
-            closestValue = distanceFromZero;
-            closestUser = { userId: user.userId, username: user.username };
-        }
+    if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
+        console.log("Invalid input parameters");
+        return null;
     }
 
-    return closestUser?.username || null;
+    try {
+        const users = await db.db('contrabot').collection("users").find({}).toArray();
+
+        if (!Array.isArray(users)) {
+            console.error("Error retrieving users from database");
+            return null;
+        }
+
+        let mostOppositeUser: { userId: string, username: string } | null = null;
+        let lowestDifferenceScore = Infinity;  // Initialize to a high value
+
+        for (const user of users) {
+            if (user.userId === userId) {
+                console.log("Skipped: same userId as input userId");
+                continue;
+            }
+
+            if (!Array.isArray(user.userVector) || user.userVector.length === 0) {
+                console.log(`Skipped: Missing or invalid userVector for userId ${user.userId}`);
+                continue;
+            }
+
+            // Calculate the difference score
+            const differenceScore = userResponses.reduce((acc, value, index) => {
+                // Multiply corresponding elements and sum them up
+                return acc + value * user.userVector[index];
+            }, 0);
+
+            // Update the most opposite user if the difference score is lower than the lowest seen so far
+            if (differenceScore < lowestDifferenceScore) {
+                lowestDifferenceScore = differenceScore;
+                mostOppositeUser = { userId: user.userId, username: user.username };
+            }
+        }
+
+        return mostOppositeUser?.username || null;
+    } catch (error) {
+        console.error("Error in findMatchingUser: ", error);
+        return null;
+    }
 }
-
-
 
 function verifyUser(interaction: any) {
     const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
