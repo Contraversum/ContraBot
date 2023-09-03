@@ -42,6 +42,19 @@ const questions = [
     'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben. 38/38',
 ];
 
+async function sendFeedbackRequest(userId: string) {
+    const user = client.users.cache.get(userId);
+    if (user) {
+        await user.send(`Hallo, vor einer Woche hast du den Test ausgefüllt. 
+        Contraversum ist ein community getriebenes Projekt, das auf Feedback angewiesen ist. 
+        Schreib doch daher bitte @lorenzoSalsaccia eine Nachricht, wie deine Erfahrung war 
+        und was wir besser machen können. Dein Feedback ist ein wichtiger Beitrag zur Verbesserung des 
+        Projekts und damit zur Depolarisierung der Gesellschaft. Vielen Dank!`);
+    } else {
+        console.warn(`User ${userId} not found for feedback.`);
+    }
+}
+
 const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
