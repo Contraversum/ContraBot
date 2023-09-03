@@ -4,11 +4,11 @@ import { client, db } from '../../index';
 const questions = [
     'Auf allen Autobahnen soll ein generelles Tempolimit gelten 1/38',
     'Deutschland soll seine Verteidigungsausgaben erhöhen 2/38',
-    // 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen 3/38',
-    // 'Die Förderung von Windenenergie soll beendet werden? 4/38',
-    // 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden. 5/38',
-    // 'Impfstoffe gegen Covid - 19 sollen weiterhin durch Patente geschützt sein. 6/38',
-    // 'Der für das Jahr 2038 geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden. 7/38',
+    'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen 3/38',
+    //'Die Förderung von Windenenergie soll beendet werden? 4/38',
+    //'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden. 5/38',
+    //'Impfstoffe gegen Covid - 19 sollen weiterhin durch Patente geschützt sein. 6/38',
+    //'Der für das Jahr 2038 geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden. 7/38',
     // 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen. 8/38',
     // 'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden. 9/38',
     // 'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden. 10/38',
@@ -100,11 +100,11 @@ const sendQuestion = async (interaction: any) => {
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
         if (bestMatch) {
-            interaction.user.send(`Danke, dass du den Test ausgefüllt hast! Dein bester Gesprächspartner ist: ${bestMatch}.`);
+            interaction.user.send(`Dein bester Gesprächspartner ist: **${bestMatch}**.`);
         }
         else {
             console.warn('No best match found');
-        }
+        }        
         
 
         verifyUser(interaction);
