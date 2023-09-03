@@ -85,8 +85,9 @@ const sendQuestion = async (interaction: any) => {
             { 
                 $set: { 
                     userId: interaction.user.id,
-                    currentQuestionIndex: currentQuestionIndex + 1,  // increment the question index
-                    userVector: userResponses  // Store responses array
+                    username: interaction.user.username,
+                    currentQuestionIndex: currentQuestionIndex + 1,
+                    userVector: userResponses 
                 }
             }, 
             { upsert: true }
@@ -101,6 +102,10 @@ const sendQuestion = async (interaction: any) => {
         if (bestMatch) {
             interaction.user.send(`Danke, dass du den Test ausgefüllt hast! Dein bester Gesprächspartner ist: ${bestMatch}.`);
         }
+        else {
+            console.warn('No best match found');
+        }
+        
 
         verifyUser(interaction);
 
@@ -119,11 +124,10 @@ const sendQuestion = async (interaction: any) => {
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
     const users = await db.db('contrabot').collection("users").find({}).toArray();
 
-    let closestUserId: string | null = null;
-    let closestValue = Infinity;  // Start with a very large value
+    let closestUser: { userId: string, username: string } | null = null;
+    let closestValue = Infinity;
 
     for (const user of users) {
-        // Skip comparing with oneself
         if (user.userId === userId) continue;
 
         const dotProduct = userResponses.reduce((acc, value, index) => acc + value * user.userVector[index], 0);
@@ -131,12 +135,13 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 
         if (distanceFromZero < closestValue) {
             closestValue = distanceFromZero;
-            closestUserId = user.userId;
+            closestUser = { userId: user.userId, username: user.username };
         }
     }
 
-    return closestUserId;
+    return closestUser?.username || null;
 }
+
 
 
 function verifyUser(interaction: any) {
