@@ -58,7 +58,8 @@ const checkForFeedbackRequests = async () => {
     for (const user of users) {
         const discordUser = await client.users.fetch(user.userId);
         if (discordUser) {
-            discordUser.send(`Hallo, vor einer Woche hast du den Test ausgefültt. 
+            discordUser.send(`
+            Hallo, vor einer Woche hast du den Test ausgefültt. 
             Wir können Contraversum nur verbessern durch Feedback von unseren Nutzern. 
             Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die depolarisierung 
             der Gesellschaft wenn du @LorenzoSalsaccia eine Nachricht schreiben könntest wie deine 
