@@ -42,19 +42,16 @@ const questions = [
     'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben. 38/38',
 ];
 
-let currentQuestionIndex = 0;
-let userResponses: number[] = [];
-
 const sendQuestion = async (interaction: any) => {
+
+    const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
+    
+    let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
+    let userResponses = userContext?.userVector || [];
+
     if (currentQuestionIndex === 0) {
-        // create a new user in the db using upsert = true  
-        db.db('contrabot').collection("users").updateOne({ userId: interaction.user.id }, {
-            $set: {
-                userId: interaction.user.id,
-                userVector: []
-            }
-        }, { upsert: true })
-    } 
+        userResponses = [];
+    }
 
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
@@ -82,27 +79,44 @@ const sendQuestion = async (interaction: any) => {
             components: [ builder ]
         });
 
-        currentQuestionIndex++;
+          // Update context for this user in the database
+          await db.db('contrabot').collection("users").updateOne(
+            { userId: interaction.user.id }, 
+            { 
+                $set: { 
+                    userId: interaction.user.id,
+                    currentQuestionIndex: currentQuestionIndex + 1,  // increment the question index
+                    userVector: userResponses  // Store responses array
+                }
+            }, 
+            { upsert: true }
+        );
     } else {
         interaction.user.send("Danke, dass du den Test ausgefüllt hast! Dein Gesprächspartner wird dir zugesendet werden.");
         console.log(userResponses);
+        console.log(interaction.user.id);
 
-        const bestMatch = await findMatchingUser(interaction.user.id);
+        const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
+
         if (bestMatch) {
             interaction.user.send(`Danke, dass du den Test ausgefüllt hast! Dein bester Gesprächspartner ist: ${bestMatch}.`);
         }
 
-        currentQuestionIndex = 0;
-        userResponses = [];
-
-        // db.db('contrabot').collection("users").findOne({ userId: interaction.user.id })
-        // await db.db('contrabot').collection("users").find({}).toArray()
-
         verifyUser(interaction);
+
+        // Reset context for this user in the database
+        await db.db('contrabot').collection("users").updateOne(
+            { userId: interaction.user.id },
+            {
+                $set: {
+                    currentQuestionIndex: 0,  // Reset to first question
+                }
+            }
+        );
     }
 }
 
-async function findMatchingUser(userId: string): Promise<string | null> {
+async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
     const users = await db.db('contrabot').collection("users").find({}).toArray();
 
     let closestUserId: string | null = null;
@@ -123,6 +137,7 @@ async function findMatchingUser(userId: string): Promise<string | null> {
 
     return closestUserId;
 }
+
 
 function verifyUser(interaction: any) {
     const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
@@ -153,4 +168,3 @@ export const execute = async (interaction: any) => {
 };
 
 export { sendQuestion };
-export { userResponses };

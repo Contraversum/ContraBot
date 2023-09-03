@@ -1,7 +1,6 @@
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { token } from './config.json';
-import * as testCommand from './commands/test/test-command';
-import { userResponses } from './commands/test/test-command';
+import { sendQuestion } from './commands/test/test-command';
 import fs from 'fs'
 import path from 'path'
 import { MongoClient } from "mongodb";
@@ -71,22 +70,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // check if the interaction is a button interaction
     else if (interaction.isButton()) {
         const buttonId = interaction.customId;
-
-        // check if the button is one of the three buttons
-        if ([ 'agree', 'disagree', 'neutral' ].includes(buttonId)) {
-            if (buttonId === 'agree') userResponses.push(1);
-            else if (buttonId === 'disagree') userResponses.push(-1);
-            else if (buttonId === 'neutral') userResponses.push(0);
-
-            await interaction.deferUpdate();
-             // Push the updated userResponses array to the database
-             db.db('contrabot').collection("users").updateOne({ userId: interaction.user.id }, {
+    
+        // Fetch user's context from the database
+        const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
+        
+        let userResponses = userContext?.userVector || [];
+    
+        // Update the userResponses based on button clicked
+        if (buttonId === 'agree') userResponses.push(1);
+        else if (buttonId === 'disagree') userResponses.push(-1);
+        else if (buttonId === 'neutral') userResponses.push(0);
+    
+        // Update the userResponses for this user in the database
+        await db.db('contrabot').collection("users").updateOne(
+            { userId: interaction.user.id },
+            {
                 $set: {
                     userVector: userResponses
                 }
-            });
-            testCommand.sendQuestion(interaction)
-        }
+            }
+        );
+    
+        await interaction.deferUpdate();
+        sendQuestion(interaction);
     }
 }
 );
