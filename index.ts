@@ -5,12 +5,12 @@ import fs from 'fs'
 import path from 'path'
 import { MongoClient } from "mongodb";
 
-export const db = new MongoClient("mongodb://localhost:27017/");
+export const db = new MongoClient("mongodb://127.0.0.1:27017/");
 interface ClientWithCommands extends Client {
     commands: Collection<string, any>
 }
 
-const client = new Client({ intents: [ GatewayIntentBits.Guilds ] }) as ClientWithCommands;
+const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as ClientWithCommands;
 
 client.on(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
@@ -70,17 +70,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // check if the interaction is a button interaction
     else if (interaction.isButton()) {
         const buttonId = interaction.customId;
-    
+
         // Fetch user's context from the database
         const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
-        
+
         let userResponses = userContext?.userVector || [];
-    
+
         // Update the userResponses based on button clicked
         if (buttonId === 'agree') userResponses.push(1);
         else if (buttonId === 'disagree') userResponses.push(-1);
         else if (buttonId === 'neutral') userResponses.push(0);
-    
+
         // Update the userResponses for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -90,7 +90,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             }
         );
-    
+
         await interaction.deferUpdate();
         sendQuestion(interaction);
     }
