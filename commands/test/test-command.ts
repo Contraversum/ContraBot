@@ -2,44 +2,44 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { client, db } from '../../index';
 
 const questions = [
-    'Auf allen Autobahnen soll ein generelles Tempolimit gelten 1/38',
-    'Deutschland soll seine Verteidigungsausgaben erhöhen 2/38',
-    'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen 3/38',
-    //'Die Förderung von Windenenergie soll beendet werden? 4/38',
-    //'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden. 5/38',
-    //'Impfstoffe gegen Covid - 19 sollen weiterhin durch Patente geschützt sein. 6/38',
-    //'Der für das Jahr 2038 geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden. 7/38',
-    // 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen. 8/38',
-    // 'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden. 9/38',
-    // 'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden. 10/38',
-    // 'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden. 11/38',
-    // 'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein. 12/38',
-    // 'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten. 13/38',
-    // 'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben. 14/38',
-    // 'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen. 15/38',
-    // 'Die Ostsee - Pipeline „Nord Stream2“, die Gas von Russland nach Deutschland transportiert, soll wie geplant in Betrieb gehen dürfen. 16/38',
-    // 'Der Solidaritätszuschlag soll vollständig abgeschafft werden. 17/38',
-    // 'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein. 18/38',
-    // 'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein. 19/38',
-    // 'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten. 20/38',
-    // 'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen. 21/38',
-    // 'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen. 22/38',
-    // 'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen. 23/38',
-    // 'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein. 24/38',
-    // 'Deutschland soll aus der Europäischen Union austreten. 25/38',
-    // 'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen. 26/38',
-    // 'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden. 27/38',
-    // 'Auf hohe Vermögen soll wieder eine Steuer erhoben werden. 28/38',
-    // 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen. 29/38',
-    // 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden. 30/38',
-    // 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft. 31/38',
-    // 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können. 32/38',
-    // 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant. 33/38',
-    // 'Die Schuldenbremse im Grundgesetz soll beibehalten werden. 34/38',
-    // 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden. 35/38',
-    // 'Der gesetzliche Mindestlohn soll spätestens im Jahr 2022 auf mindestens 12 Euro erhöht werden. 36/38',
-    // 'Der Flugverkehr soll höher besteuert werden. 37/38',
-    'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben. 38/38',
+    'Auf allen Autobahnen soll ein generelles Tempolimit gelten.',
+    'Deutschland soll seine Verteidigungsausgaben erhöhen.',
+    'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.',
+    //'Die Förderung von Windenenergie soll beendet werden?',
+    //'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.',
+    //'Impfstoffe gegen Covid - 19 sollen weiterhin durch Patente geschützt sein.',
+    //'Der für das Jahr 2038 geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.',
+    // 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.',
+    // 'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.',
+    // 'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.',
+    // 'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.',
+    // 'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.',
+    // 'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.',
+    // 'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.',
+    // 'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.',
+    // 'Die Ostsee - Pipeline „Nord Stream2“, die Gas von Russland nach Deutschland transportiert, soll wie geplant in Betrieb gehen dürfen.',
+    // 'Der Solidaritätszuschlag soll vollständig abgeschafft werden.',
+    // 'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.',
+    // 'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.'
+    // 'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.',
+    // 'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.',
+    // 'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.',
+    // 'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.',
+    // 'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.',
+    // 'Deutschland soll aus der Europäischen Union austreten.',
+    // 'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.',
+    // 'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.',
+    // 'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.',
+    // 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.',
+    // 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.',
+    // 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.',
+    // 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.',
+    // 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.',
+    // 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.',
+    // 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.',
+    // 'Der gesetzliche Mindestlohn soll spätestens im Jahr 2022 auf mindestens 12 Euro erhöht werden.',
+    // 'Der Flugverkehr soll höher besteuert werden.',
+    'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.',
 ];
 
 const sendQuestion = async (interaction: any) => {
@@ -48,6 +48,7 @@ const sendQuestion = async (interaction: any) => {
     
     let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
     let userResponses = userContext?.userVector || [];
+    var currentQuestionDisplay = currentQuestionIndex + 1
 
     if (currentQuestionIndex === 0) {
         userResponses = [];
@@ -55,9 +56,9 @@ const sendQuestion = async (interaction: any) => {
 
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
-            .setTitle("Frage:")
+            .setTitle("Frage: " + currentQuestionDisplay + "/38")
             .setDescription(questions[ currentQuestionIndex ])
-            .setColor('#f55a00');
+            .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
             new ButtonBuilder()
@@ -65,13 +66,13 @@ const sendQuestion = async (interaction: any) => {
                 .setStyle(ButtonStyle.Success)
                 .setEmoji("👍"),
             new ButtonBuilder()
-                .setCustomId(`disagree`)
-                .setStyle(ButtonStyle.Danger)
-                .setEmoji("👎"),
-            new ButtonBuilder()
                 .setCustomId(`neutral`)
                 .setStyle(ButtonStyle.Secondary)
                 .setEmoji("😐"),
+            new ButtonBuilder()
+                .setCustomId(`disagree`)
+                .setStyle(ButtonStyle.Danger)
+                .setEmoji("👎"),
         ]);
 
         interaction.user.send({
