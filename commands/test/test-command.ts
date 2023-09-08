@@ -45,7 +45,7 @@ const questions = [
 const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
-    
+
     let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
     let userResponses = userContext?.userVector || [];
     var currentQuestionDisplay = currentQuestionIndex + 1
@@ -57,7 +57,7 @@ const sendQuestion = async (interaction: any) => {
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle("Frage: " + currentQuestionDisplay + "/38")
-            .setDescription(questions[ currentQuestionIndex ])
+            .setDescription(questions[currentQuestionIndex])
             .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -76,21 +76,21 @@ const sendQuestion = async (interaction: any) => {
         ]);
 
         interaction.user.send({
-            embeds: [ embed ],
-            components: [ builder ]
+            embeds: [embed],
+            components: [builder]
         });
 
-          // Update context for this user in the database
-          await db.db('contrabot').collection("users").updateOne(
-            { userId: interaction.user.id }, 
-            { 
-                $set: { 
+        // Update context for this user in the database
+        await db.db('contrabot').collection("users").updateOne(
+            { userId: interaction.user.id },
+            {
+                $set: {
                     userId: interaction.user.id,
                     username: interaction.user.username,
                     currentQuestionIndex: currentQuestionIndex + 1,
-                    userVector: userResponses 
+                    userVector: userResponses
                 }
-            }, 
+            },
             { upsert: true }
         );
     } else {
@@ -101,12 +101,14 @@ const sendQuestion = async (interaction: any) => {
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
         if (bestMatch) {
-            interaction.user.send(`Dein bester Gesprächspartner ist: **${bestMatch}**.`);
+            interaction.user.send(`Dein bester Gesprächspartner ist: <@${bestMatch}>.`);
+            conversationStarter(interaction);
         }
         else {
             console.warn('No best match found');
-        }        
-        
+            interaction.user.send("Es tut uns leid, aber zur Zeit konnte kein geeigneter Gesprächspartner gefunden werden.\nBitte später nochmal probieren.");
+        }
+
 
         verifyUser(interaction);
 
@@ -121,6 +123,27 @@ const sendQuestion = async (interaction: any) => {
         );
     }
 }
+function conversationStarter(interaction: any) {
+    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
+    interaction.user.send(`Damit dieser erste Schritt nicht zu beängstigend ist, schlagen wir vor, das folgende Einführungsthema zu diskutieren: ⚛${topic()}⚛`);
+    interaction.user.send(`Falls erforderlich, kannst du deinem Partner auch einige Fragen bezüglich seiner politischen Richtung stellen`);
+    function topic() {
+        let topics = ["Atomausstieg - Erfolg oder Scheitern", "Covid-19 - erfolgreiche Abwehr oder totale Katastrophe", "Ukraine-Krieg - ds",
+            "Energiekrise - wer ist schuld?", "Klimawandel - gibt es ihn oder nicht?", "Klimawandel - besiegt er uns oder fast?", "Bildung - nur für die Dummen oder schlau gemacht?",];
+        return topics[Math.floor(Math.random() * topics.length)]
+    }
+}
+
+function conversationStarterAlt(interaction: any) {
+    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
+    interaction.user.send(`Ihr beide hattet dieselbe Meinung bei der Frage`);
+    interaction.user.send(`If needed, here are some questions you could also ask of your partner`);
+    function topic() {
+        let topics = ["Atomausstieg - Ein Erfolg oder", "Covid-19"];
+        return topics[Math.floor(Math.random() * topics.length)]
+    }
+}
+
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
