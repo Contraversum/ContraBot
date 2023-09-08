@@ -46,7 +46,7 @@ const questions = [
 
 const checkForFeedbackRequests = async () => {
     const now = DateTime.now();
-    const oneWeekAgo = now.minus({ weeks: 1 });
+    const oneWeekAgo = now.minus({ seconds: 5 });
 
     const users = await db.db('contrabot').collection("users").find({
         completionTime: { 
@@ -55,22 +55,33 @@ const checkForFeedbackRequests = async () => {
         feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
     }).toArray();
 
+    // Create a button to start the survey
+    const startSurveyButton = new ButtonBuilder()
+        .setCustomId('start_survey')
+        .setLabel('Start Survey')
+        .setStyle(ButtonStyle.Primary);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(startSurveyButton);
+
     for (const user of users) {
         const discordUser = await client.users.fetch(user.userId);
         if (discordUser) {
-            discordUser.send(`
-            Hallo, vor einer Woche hast du den Test ausgefültt. 
-            Wir können Contraversum nur verbessern durch Feedback von unseren Nutzern. 
-            Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die depolarisierung 
-            der Gesellschaft wenn du @LorenzoSalsaccia eine Nachricht schreiben könntest wie deine 
-            Erfahrung war und was wir besser machen können. Vielen Dank, dein ContraBot <3`);
+            await discordUser.send({
+                content: `
+                Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
+                Wir können Contraversum nur verbessern durch Feedback von unseren Nutzern. 
+                Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die depolarisierung 
+                der Gesellschaft wenn du uns Feedback geben könntest, es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
+                components: [actionRow]
+            });
 
-            // Mark that the feedback request has been sent to avoid asking multiple times.
+            // Update context for this user in the database
             await db.db('contrabot').collection("users").updateOne(
-                { userId: user.userId },
-                {
+                { userId: user.userId }, 
+                { 
                     $set: { 
-                        feedbackRequestSent: true 
+                        feedbackRequestSent: true
                     }
                 }
             );
@@ -78,8 +89,7 @@ const checkForFeedbackRequests = async () => {
     }
 };
 
-
-const job = new cron.CronJob('0 * * * *', checkForFeedbackRequests); // This runs every hour. Modify as needed.
+const job = new cron.CronJob('* * * * *', checkForFeedbackRequests); // This runs every hour. Modify as needed.
 job.start();
 
 
@@ -128,7 +138,8 @@ const sendQuestion = async (interaction: any) => {
                     userId: interaction.user.id,
                     username: interaction.user.username,
                     currentQuestionIndex: currentQuestionIndex + 1,
-                    userVector: userResponses 
+                    userVector: userResponses,
+                    feedbackRequestSent: false
                 }
             }, 
             { upsert: true }

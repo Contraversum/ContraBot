@@ -1,6 +1,7 @@
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { token } from './config.json';
 import { sendQuestion } from './commands/test/test-command';
+import { startSurvey } from './commands/test/startSurvey';
 import fs from 'fs'
 import path from 'path'
 import { MongoClient } from "mongodb";
@@ -70,7 +71,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // check if the interaction is a button interaction
     else if (interaction.isButton()) {
         const buttonId = interaction.customId;
-    
+
+        if (buttonId === 'start_survey') {
+            await interaction.deferUpdate();
+            startSurvey(interaction);
+        }
+        else {
         // Fetch user's context from the database
         const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
         
@@ -93,6 +99,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     
         await interaction.deferUpdate();
         sendQuestion(interaction);
+        }
     }
 }
 );
