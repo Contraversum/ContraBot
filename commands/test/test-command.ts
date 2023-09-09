@@ -102,13 +102,13 @@ const sendQuestion = async (interaction: any) => {
 
         if (bestMatch) {
             interaction.user.send(`Dein bester Gesprächspartner ist: @${bestMatch}.`);
-            //conversationStarter(interaction);
-            conversationStarterAlt(interaction, bestMatch, userResponses);
+            interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum-Server klickst 👆 und ihm eine Nachricht sendest.");
+
+            conversationStarter(interaction, bestMatch, userResponses);
         }
         else {
             console.warn('No best match found');
-            interaction.user.send(`Es tut uns leid, aber zur Zeit konnte kein geeigneter Gesprächspartner gefunden werden. Bitte später nochmal probieren.`);
-            conversationStarter(interaction);
+            interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
         }
 
 
@@ -126,37 +126,35 @@ const sendQuestion = async (interaction: any) => {
     }
 }
 
-async function conversationStarterAlt(interaction: any, bestMatch: string, user: number[]) {
+async function conversationStarter(interaction: any, bestMatch: string, user: number[]) {
     // get the data from bestMatch
     const match = await db.db('contrabot').collection("users").find({}).toArray();
     let matchVector: number[] = [];
-
     for (const user of match) {
         if (user.username === bestMatch) {
             console.log(user.userVector, user.username);
             matchVector = user.userVector;
         }
     }
+
     const disagree: number[] = [];
     const agree: number[] = [];
     // get all contrasting and similar answers
     user.forEach((value, i) => {
+        const total = value + matchVector[i];
         if (value !== 0 && matchVector[i] !== 0) {
-            if (value + matchVector[i] === 0) {
+            if (total === 0) {
                 disagree.push(i);
             } else {
-                agree.push(i)
+                agree.push(i);
             }
         }
     });
 
-    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum Server klickst 👆 und etwas schreibst.");
-    interaction.user.send(`Als Orientierung - Folgende Fragen wurden unterschiedlich beantwortet: `);
-
-    function getMultipleRandoms(arr: number[], num: number) {
+    function getRandomAnswer(arr: number[], num: number) {
         return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
     }
-    getMultipleRandoms(disagree, 3).forEach((value) => {
+    getRandomAnswer(disagree, 3).forEach((value) => {
         if (value >= 0 && value < questions.length) {
             interaction.user.send({
                 embeds: [
@@ -171,14 +169,19 @@ async function conversationStarterAlt(interaction: any, bestMatch: string, user:
         }
     });
 
-    function topic() {
-        let topics = ["Atomausstieg", "Covid-19", "Ukraine-Krieg", "Energiekrise", "Klimawandel", "Bildung",];
-        return topics[Math.floor(Math.random() * topics.length)]
+    let topics = ["Atomausstieg", "Covid-19", "Ukraine-Krieg", "Energiekrise", "Klimawandel", "Bildung"];
+    function getRandomTopic() {
+        if (topics.length === 0) {
+            return "No topics available"; // Handle the case when all topics have been used
+        }
+        return topics.splice(Math.floor(Math.random() * topics.length), 1)[0] // Remove the selected topic from the array
     }
-    interaction.user.send(`Diese unterscheidende Meinungen können diskutiert werden oder ein aktuelles Thema wie z.B: **${topic()}**.`);
+
+    interaction.user.send("Dies sind einige der Fragen, die anders beantwortet wurden, vielleicht könnte man darüber diskutieren?");
+    interaction.user.send(`Als Gesprächsthemen können z.B. auch **${getRandomTopic()}** oder  **${getRandomTopic()}** besprochen werden.`);
 }
 
-function conversationStarter(interaction: any) {
+/*function conversationStarter(interaction: any) {
     interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
     interaction.user.send(`\nDamit dieser erste Schritt nicht zu beängstigend ist, schlagen wir vor, das folgende Einführungsthema zu diskutieren: **${topic()}**`);
     interaction.user.send(`\nFalls erforderlich, kannst du deinem Partner auch einige Fragen bezüglich seiner politischen Richtung stellen`);
@@ -187,9 +190,7 @@ function conversationStarter(interaction: any) {
             "Energiekrise - wer ist schuld?", "Klimawandel - gibt es ihn oder nicht?", "Klimawandel - besiegt er uns oder fast?", "Bildung - nur für die Dummen oder schlau gemacht?",];
         return topics[Math.floor(Math.random() * topics.length)]
     }
-}
-
-
+}*/
 
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
