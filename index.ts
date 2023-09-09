@@ -151,39 +151,41 @@ client.on(Events.MessageCreate, async (message) => {
             // Calculate the column where the answer should be placed.
             const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
 
-            if (currentFeedbackQuestionIndex === 0) {  // If first feedback from the user
+            // Find the row number for the current user (assuming the user's ID is in the first column)
+            const response = await sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
+            });
+            const rows = response.data.values || [];
+            let rowIndex = rows.findIndex(row => row[0] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+
+            // If the user is not found, create a new row for them
+            if (rowIndex === 0) {
                 await sheets.spreadsheets.values.append({
                     spreadsheetId: SHEET_ID,
-                    range: `${START_COLUMN}:${END_COLUMN}`, 
+                    range: `${START_COLUMN}:${END_COLUMN}`,
                     valueInputOption: 'RAW',
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
                         values: [
-                            [message.author.id, message.content]  // userID in the first column, first answer in the second column
+                            [message.author.id]  // userID in the first column
                         ]
                     }
                 } as any);
-            } else {
-                // Find the row number for the current user (assuming the user's ID is in the first column)
-                const response = await sheets.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
-                });
-                const rows = response.data.values || [];
-                const rowIndex = rows.findIndex(row => row[0] === message.author.id) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
-
-                // Update the particular cell with the answer
-                await sheets.spreadsheets.values.update({
-                    spreadsheetId: SHEET_ID,
-                    range: `${columnForAnswer}${rowIndex}`,
-                    valueInputOption: 'RAW',
-                    resource: {
-                        values: [
-                            [message.content]
-                        ]
-                    }
-                } as any);
+                rowIndex = rows.length + 1;  // New row index
             }
+
+            // Update the particular cell with the answer
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SHEET_ID,
+                range: `${columnForAnswer}${rowIndex}`,
+                valueInputOption: 'RAW',
+                resource: {
+                    values: [
+                        [message.content]
+                    ]
+                }
+            } as any);
 
             currentFeedbackQuestionIndex++;
 
@@ -214,5 +216,6 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
+
 
 export { client };
