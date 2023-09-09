@@ -139,7 +139,8 @@ const sendQuestion = async (interaction: any) => {
                     username: interaction.user.username,
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
-                    feedbackRequestSent: false
+                    feedbackRequestSent: false,
+                    currentFeedbackQuestionIndex: 0
                 }
             }, 
             { upsert: true }
