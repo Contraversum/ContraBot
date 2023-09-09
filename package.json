@@ -13,6 +13,7 @@
     "dependencies": {
         "cron": "^2.4.3",
         "discord.js": "^14.12.1",
+        "googleapis": "^126.0.1",
         "luxon": "^3.4.2",
         "mongodb": "^5.8.1",
         "typescript": "^5.1.6"

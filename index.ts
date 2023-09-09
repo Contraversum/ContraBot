@@ -2,9 +2,10 @@ import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { token } from './config.json';
 import { sendQuestion } from './commands/test/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './commands/test/startSurvey';
-import fs from 'fs'
+import * as fs from 'fs';
 import path from 'path'
 import { MongoClient } from "mongodb";
+import { google } from 'googleapis';
 
 export const db = new MongoClient("mongodb://localhost:27017/");
 interface ClientWithCommands extends Client {
@@ -121,20 +122,71 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 });
 
+// API configuration for Google Sheets
+const SHEET_ID = '1pKsioVutiEPkNwTUrW1v_Y8bFe5eQobCGpK9KVpsOo8';
+const START_COLUMN = 'A';
+const END_COLUMN = 'P';
+const COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');  // to allow easy access to column names
+const sheetConfig = JSON.parse(fs.readFileSync('./sheetConfig.json', 'utf-8'));
+
+const jwtClient = new google.auth.JWT(
+  sheetConfig.client_email,
+  undefined,
+  sheetConfig.private_key,
+  ['https://www.googleapis.com/auth/spreadsheets']
+);
+
+const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+// Catch feedback messages
 client.on(Events.MessageCreate, async (message) => {
-    // Ignore messages from the bot itself
     if (message.author.bot) return;
 
     try {
-        // Fetch user's context from the database
         const userContext = await db.db('contrabot').collection("users").findOne({ userId: message.author.id });
 
         if (userContext?.feedbackInProgress) {
-            // Update feedback question index
             let currentFeedbackQuestionIndex = userContext?.currentFeedbackQuestionIndex || 0;
+            
+            // Calculate the column where the answer should be placed.
+            const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
+
+            if (currentFeedbackQuestionIndex === 0) {  // If first feedback from the user
+                await sheets.spreadsheets.values.append({
+                    spreadsheetId: SHEET_ID,
+                    range: `${START_COLUMN}:${END_COLUMN}`, 
+                    valueInputOption: 'RAW',
+                    insertDataOption: 'INSERT_ROWS',
+                    resource: {
+                        values: [
+                            [message.author.id, message.content]  // userID in the first column, first answer in the second column
+                        ]
+                    }
+                } as any);
+            } else {
+                // Find the row number for the current user (assuming the user's ID is in the first column)
+                const response = await sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
+                });
+                const rows = response.data.values || [];
+                const rowIndex = rows.findIndex(row => row[0] === message.author.id) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+
+                // Update the particular cell with the answer
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId: SHEET_ID,
+                    range: `${columnForAnswer}${rowIndex}`,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [
+                            [message.content]
+                        ]
+                    }
+                } as any);
+            }
+
             currentFeedbackQuestionIndex++;
 
-            // If there are more survey questions, send the next one
             if (currentFeedbackQuestionIndex < Feedbackquestions.length) {
                 message.author.send(Feedbackquestions[currentFeedbackQuestionIndex]);
 
@@ -147,7 +199,6 @@ client.on(Events.MessageCreate, async (message) => {
                     }
                 );
             } else {
-                // If no more questions, end the feedback process
                 await db.db('contrabot').collection("users").updateOne(
                     { userId: message.author.id }, 
                     { 
@@ -163,6 +214,5 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
-
 
 export { client };
