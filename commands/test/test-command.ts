@@ -5,7 +5,7 @@ const questions = [
     'Auf allen Autobahnen soll ein generelles Tempolimit gelten.',
     'Deutschland soll seine Verteidigungsausgaben erhöhen.',
     'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.',
-    'Die Förderung von Windenenergie soll beendet werden?',
+    'Die Förderung von Windenenergie soll beendet werden?',/*
     'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.',
     'Impfstoffe gegen Covid - 19 sollen weiterhin durch Patente geschützt sein.',
     'Der für das Jahr 2038 geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.',
@@ -39,7 +39,7 @@ const questions = [
     'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.',
     'Der gesetzliche Mindestlohn soll spätestens im Jahr 2022 auf mindestens 12 Euro erhöht werden.',
     'Der Flugverkehr soll höher besteuert werden.',
-    'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.',
+    'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.',*/
 ];
 
 const sendQuestion = async (interaction: any) => {
@@ -101,12 +101,14 @@ const sendQuestion = async (interaction: any) => {
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
         if (bestMatch) {
-            interaction.user.send(`Dein bester Gesprächspartner ist: <@${bestMatch}>.`);
-            conversationStarter(interaction);
+            interaction.user.send(`Dein bester Gesprächspartner ist: @${bestMatch}.`);
+            //conversationStarter(interaction);
+            conversationStarterAlt(interaction, bestMatch, userResponses);
         }
         else {
             console.warn('No best match found');
-            interaction.user.send("Es tut uns leid, aber zur Zeit konnte kein geeigneter Gesprächspartner gefunden werden.\nBitte später nochmal probieren.");
+            interaction.user.send(`Es tut uns leid, aber zur Zeit konnte kein geeigneter Gesprächspartner gefunden werden. Bitte später nochmal probieren.`);
+            conversationStarter(interaction);
         }
 
 
@@ -123,26 +125,71 @@ const sendQuestion = async (interaction: any) => {
         );
     }
 }
+
+async function conversationStarterAlt(interaction: any, bestMatch: string, user: number[]) {
+    // get the data from bestMatch
+    const match = await db.db('contrabot').collection("users").find({}).toArray();
+    let matchVector: number[] = [];
+
+    for (const user of match) {
+        if (user.username === bestMatch) {
+            console.log(user.userVector, user.username);
+            matchVector = user.userVector;
+        }
+    }
+    const disagree: number[] = [];
+    const agree: number[] = [];
+    // get all contrasting and similar answers
+    user.forEach((value, i) => {
+        if (value !== 0 && matchVector[i] !== 0) {
+            if (value + matchVector[i] === 0) {
+                disagree.push(i);
+            } else {
+                agree.push(i)
+            }
+        }
+    });
+
+    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum Server klickst 👆 und etwas schreibst.");
+    interaction.user.send(`Als Orientierung - Folgende Fragen wurden unterschiedlich beantwortet: `);
+
+    function getMultipleRandoms(arr: number[], num: number) {
+        return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
+    }
+    getMultipleRandoms(disagree, 3).forEach((value) => {
+        if (value >= 0 && value < questions.length) {
+            interaction.user.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle(`Frage: ${value + 1}/38`)
+                        .setDescription(questions[value])
+                        .setColor('#fb2364')
+                ]
+            });
+        } else {
+            console.error("Invalid value:", value);
+        }
+    });
+
+    function topic() {
+        let topics = ["Atomausstieg", "Covid-19", "Ukraine-Krieg", "Energiekrise", "Klimawandel", "Bildung",];
+        return topics[Math.floor(Math.random() * topics.length)]
+    }
+    interaction.user.send(`Diese unterscheidende Meinungen können diskutiert werden oder ein aktuelles Thema wie z.B: **${topic()}**.`);
+}
+
 function conversationStarter(interaction: any) {
     interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
-    interaction.user.send(`Damit dieser erste Schritt nicht zu beängstigend ist, schlagen wir vor, das folgende Einführungsthema zu diskutieren: ⚛${topic()}⚛`);
-    interaction.user.send(`Falls erforderlich, kannst du deinem Partner auch einige Fragen bezüglich seiner politischen Richtung stellen`);
+    interaction.user.send(`\nDamit dieser erste Schritt nicht zu beängstigend ist, schlagen wir vor, das folgende Einführungsthema zu diskutieren: **${topic()}**`);
+    interaction.user.send(`\nFalls erforderlich, kannst du deinem Partner auch einige Fragen bezüglich seiner politischen Richtung stellen`);
     function topic() {
-        let topics = ["Atomausstieg - Erfolg oder Scheitern", "Covid-19 - erfolgreiche Abwehr oder totale Katastrophe", "Ukraine-Krieg - ds",
+        let topics = ["Atomausstieg - Erfolg oder Scheitern", "Covid-19 - erfolgreiche Abwehr oder totale Katastrophe", "Ukraine-Krieg - Wie beendet man ihn?",
             "Energiekrise - wer ist schuld?", "Klimawandel - gibt es ihn oder nicht?", "Klimawandel - besiegt er uns oder fast?", "Bildung - nur für die Dummen oder schlau gemacht?",];
         return topics[Math.floor(Math.random() * topics.length)]
     }
 }
 
-function conversationStarterAlt(interaction: any) {
-    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
-    interaction.user.send(`Ihr beide hattet dieselbe Meinung bei der Frage`);
-    interaction.user.send(`If needed, here are some questions you could also ask of your partner`);
-    function topic() {
-        let topics = ["Atomausstieg - Ein Erfolg oder", "Covid-19"];
-        return topics[Math.floor(Math.random() * topics.length)]
-    }
-}
+
 
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
