@@ -46,7 +46,7 @@ const questions = [
 
 const checkForFeedbackRequests = async () => {
     const now = DateTime.now();
-    const oneWeekAgo = now.minus({ seconds: 5 });
+    const oneWeekAgo = now.minus({ days: 7 });
 
     const users = await db.db('contrabot').collection("users").find({
         completionTime: { 
@@ -89,7 +89,7 @@ const checkForFeedbackRequests = async () => {
     }
 };
 
-const job = new cron.CronJob('* * * * *', checkForFeedbackRequests); // This runs every hour. Modify as needed.
+const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks for Feedback every hour
 job.start();
 
 
