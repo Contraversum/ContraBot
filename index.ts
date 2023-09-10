@@ -7,7 +7,7 @@ import path from 'path'
 import { MongoClient } from "mongodb";
 import { google } from 'googleapis';
 
-export const db = new MongoClient("mongodb://localhost:27017/");
+export const db = new MongoClient("mongodb://127.0.0.1:27017/");
 interface ClientWithCommands extends Client {
     commands: Collection<string, any>
 }
@@ -98,14 +98,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
         else {
         // Fetch user's context from the database
         const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
-        
+
         let userResponses = userContext?.userVector || [];
-    
+
         // Update the userResponses based on button clicked
         if (buttonId === 'agree') userResponses.push(1);
         else if (buttonId === 'disagree') userResponses.push(-1);
         else if (buttonId === 'neutral') userResponses.push(0);
-    
+
         // Update the userResponses for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -115,7 +115,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             }
         );
-    
+
         await interaction.deferUpdate();
         sendQuestion(interaction);
         }
