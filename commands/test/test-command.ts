@@ -58,7 +58,7 @@ const checkForFeedbackRequests = async () => {
     // Create a button to start the survey
     const startSurveyButton = new ButtonBuilder()
         .setCustomId('start_survey')
-        .setLabel('Start Survey')
+        .setLabel('Jetzt Feedback geben')
         .setStyle(ButtonStyle.Primary);
 
     const actionRow = new ActionRowBuilder<ButtonBuilder>()
