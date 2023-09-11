@@ -2,40 +2,40 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { client, db } from '../../index';
 
 const questions = [
-    'Auf allen Autobahnen soll ein generelles Tempolimit gelten.',
-    'Deutschland soll seine Verteidigungsausgaben erhöhen.',
-    'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.',
-    'Die Förderung von Windenenergie soll beendet werden?',
-    'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.',
-    'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.',
-    'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.',
-    'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.',
-    'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.',
-    'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.',
-    'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.',
-    'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.',
-    'Migration in die Europäische Union sollte erleichtert werden.',
-    'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.',
-    'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.',
-    'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.',
-    'Der Solidaritätszuschlag soll vollständig abgeschafft werden.',
-    'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.',
-    'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.',
-    'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.',
-    'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.',
-    'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.',
-    'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.',
-    'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.',
-    'Deutschland soll aus der Europäischen Union austreten.',
-    'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.',
-    'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.',
-    'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.',
-    'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.',
-    'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.',
-    'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.',
-    'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.',
-    'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.',
-    'Die Schuldenbremse im Grundgesetz soll beibehalten werden.',
+    //'Auf allen Autobahnen soll ein generelles Tempolimit gelten.',
+    //'Deutschland soll seine Verteidigungsausgaben erhöhen.',
+    //'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.',
+    //'Die Förderung von Windenenergie soll beendet werden?',
+    //'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.',
+    //'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.',
+    //'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.',
+    //'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.',
+    //'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.',
+    //'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.',
+    //'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.',
+    //'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.',
+    //'Migration in die Europäische Union sollte erleichtert werden.',
+    //'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.',
+    //'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.',
+    //'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.',
+    //'Der Solidaritätszuschlag soll vollständig abgeschafft werden.',
+    //Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.',
+    //'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.',
+    //'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.',
+    //'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.',
+    //'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.',
+    //'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.',
+    //'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.',
+   // 'Deutschland soll aus der Europäischen Union austreten.',
+   // 'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.',
+   // 'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.',
+   // 'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.',
+   // 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.',
+   // 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.',
+   // 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.',
+   // 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.',
+   // 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.',
+    //'Die Schuldenbremse im Grundgesetz soll beibehalten werden.',
     'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.',
     'Der gesetzliche Mindestlohn sollte erhöht werden.',
     'Der Flugverkehr soll höher besteuert werden.',
@@ -101,7 +101,13 @@ const sendQuestion = async (interaction: any) => {
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
         if (bestMatch) {
-            interaction.user.send(`Dein bester Gesprächspartner ist: **${bestMatch}**.`);
+            interaction.user.send(`Dein bester Gesprächspartner ist: **${bestMatch.username}**.`);
+
+            // Send the best match that they have been matched with the user
+            const bestMatchUser = await client.users.fetch(bestMatch.userId);
+            if (bestMatchUser) {
+                bestMatchUser.send(`Hey 👋, du wurdest mit: **@${interaction.user.username}** gematched.`);
+            }
         }
         else {
             console.warn('No best match found');
@@ -122,7 +128,7 @@ const sendQuestion = async (interaction: any) => {
     }
 }
 
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
+async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string } | null> {
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -163,7 +169,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             }
         }
 
-        return mostOppositeUser?.username || null;
+        return mostOppositeUser || null;
     } catch (error) {
         console.error("Error in findMatchingUser: ", error);
         return null;
