@@ -2,44 +2,44 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { client, db } from '../../index';
 
 const questions = [
-    'Auf allen Autobahnen soll ein generelles Tempolimit gelten.',
-    'Deutschland soll seine Verteidigungsausgaben erhöhen.',
-    'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.',
-    'Die Förderung von Windenenergie soll beendet werden?',/*
-    'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.',
-    'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.',
-    'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.',
-    'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.',
-    'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.',
-    'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.',
-    'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.',
-    'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.',
-    'Migration in die Europäische Union sollte erleichtert werden.',
-    'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.',
-    'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.',
-    'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.',
-    'Der Solidaritätszuschlag soll vollständig abgeschafft werden.',
-    'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.',
-    'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.',
-    'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.',
-    'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.',
-    'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.',
-    'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.',
-    'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.',
-    'Deutschland soll aus der Europäischen Union austreten.',
-    'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.',
-    'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.',
-    'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.',
-    'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.',
-    'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.',
-    'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.',
-    'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.',
-    'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.',
-    'Die Schuldenbremse im Grundgesetz soll beibehalten werden.',
-    'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.',
-    'Der gesetzliche Mindestlohn sollte erhöht werden.',
-    'Der Flugverkehr soll höher besteuert werden.',
-    'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.',*/
+    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: 'Verkehrssicherheit' },
+    { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
+    { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: 'Wahlalter' },
+    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: 'Energiepolitik/Klimawandel' },
+    { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: 'Mietpreisbremse' },
+    { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: 'EU-Erweiterung/Ukraine Krieg' },
+    { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: 'Energiepolitik/Umweltschutz' },
+    { question: 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.', tag: 'Sozialversicherung' },
+    { question: 'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.', tag: 'Flüchtlingspolitik' },
+    { question: 'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.', tag: 'Digitalsteuer' },
+    { question: 'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.', tag: 'Familienpolitik' },
+    { question: 'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.', tag: 'Parteienfinanzierung' },
+    { question: 'Migration in die Europäische Union sollte erleichtert werden.', tag: 'Migrationspolitik' },
+    { question: 'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.', tag: 'Bildungspolitik' },
+    { question: 'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.', tag: 'Staatsbürgerschaft' },
+    { question: 'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.', tag: 'Genderpolitik' },
+    { question: 'Der Solidaritätszuschlag soll vollständig abgeschafft werden.', tag: 'Steuerpolitik/Solidaritätszuschlag' },
+    { question: 'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.', tag: 'Religionsfreiheit' },
+    { question: 'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.', tag: 'Umweltschutz' },
+    { question: 'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.', tag: 'Bildungsföderalismus' },
+    { question: 'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.', tag: 'Antisemitismus' },
+    { question: 'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.', tag: 'Wirtschaftspolitik' },
+    { question: 'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.', tag: 'Kirchensteuer' },
+    { question: 'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.', tag: 'Drogenpolitik' },
+    { question: 'Deutschland soll aus der Europäischen Union austreten.', tag: 'EU-Austritt' },
+    { question: 'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.', tag: 'Geschlechtergerechtigkeit' },
+    { question: 'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.', tag: 'Gesundheitspolitik' },
+    { question: 'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.', tag: 'Steuerpolitik/Vermögenssteuer' },
+    { question: 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.', tag: 'Datenschutz/Videoüberwachung' },
+    { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienförderung' },
+    { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Landwirtschaftspolitik' },
+    { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: 'Religionspolitik/Islam' },
+    { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: 'Klimaschutz/KLimawandel' },
+    { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Haushaltspolitik/Fiskalpolitik/Defizitregel' },
+    { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Asylpolitik' },
+    { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Arbeitsmarkt/Mindestlohn' },
+    { question: 'Der Flugverkehr soll höher besteuert werden.', tag: 'Flugverkehr/Klimapolitik' },
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: 'Arbeitsrecht/Digitalisierung' },
 ];
 
 const sendQuestion = async (interaction: any) => {
@@ -57,7 +57,7 @@ const sendQuestion = async (interaction: any) => {
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle("Frage: " + currentQuestionDisplay + "/38")
-            .setDescription(questions[currentQuestionIndex])
+            .setDescription(questions[currentQuestionIndex].question)
             .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -137,60 +137,58 @@ async function conversationStarter(interaction: any, bestMatch: string, user: nu
         }
     }
 
+    // get all contrasting and similar answers
+    let addedToDisagree = false; // Track if any numbers were added to disagree
     const disagree: number[] = [];
     const agree: number[] = [];
-    // get all contrasting and similar answers
+
     user.forEach((value, i) => {
         const total = value + matchVector[i];
-        if (value !== 0 && matchVector[i] !== 0) {
+        if (!addedToDisagree && value !== 0 && matchVector[i] !== 0) {
             if (total === 0) {
                 disagree.push(i);
+                addedToDisagree = true; // Set the flag
             } else {
                 agree.push(i);
             }
         }
     });
+    // Only add to disagree if the flag is still false
+    if (!addedToDisagree) {
+        user.forEach((value, i) => {
+            const total = value + matchVector[i];
+            if (Math.abs(total) === 1) {
+                disagree.push(i);
+            }
+        });
+    }
 
     function getRandomAnswer(arr: number[], num: number) {
         return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
     }
-    getRandomAnswer(disagree, 3).forEach((value) => {
-        if (value >= 0 && value < questions.length) {
-            interaction.user.send({
-                embeds: [
-                    new EmbedBuilder()
-                        .setTitle(`Frage: ${value + 1}/38`)
-                        .setDescription(questions[value])
-                        .setColor('#fb2364')
-                ]
-            });
-        } else {
-            console.error("Invalid value:", value);
-        }
+
+    const selectedIndexes = getRandomAnswer(disagree, 3)
+    selectedIndexes.forEach((value) => {
+        interaction.user.send({
+            embeds: [
+                new EmbedBuilder()
+                    .setTitle(`Frage: ${value + 1}/38`)
+                    .setDescription(questions[value].question)
+                    .setColor('#fb2364')
+            ]
+        });
     });
 
-    let topics = ["Atomausstieg", "Covid-19", "Ukraine-Krieg", "Energiekrise", "Klimawandel", "Bildung"];
-    function getRandomTopic() {
-        if (topics.length === 0) {
-            return "No topics available"; // Handle the case when all topics have been used
-        }
-        return topics.splice(Math.floor(Math.random() * topics.length), 1)[0] // Remove the selected topic from the array
-    }
+    // Make it so that the tags of the questions are printed properly
+    const selectedTags = selectedIndexes
+        .map(index => questions[index].tag)
+        .filter(tag => tag)
+        .slice(0, 3);
 
-    interaction.user.send("Dies sind einige der Fragen, die anders beantwortet wurden, vielleicht könnte man darüber diskutieren?");
-    interaction.user.send(`Als Gesprächsthemen können z.B. auch **${getRandomTopic()}** oder  **${getRandomTopic()}** besprochen werden.`);
+    const topicsMessage = `Als Gesprächsthemen können dadurch z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
+    interaction.user.send(topicsMessage);
 }
 
-/*function conversationStarter(interaction: any) {
-    interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen klickst 👆.");
-    interaction.user.send(`\nDamit dieser erste Schritt nicht zu beängstigend ist, schlagen wir vor, das folgende Einführungsthema zu diskutieren: **${topic()}**`);
-    interaction.user.send(`\nFalls erforderlich, kannst du deinem Partner auch einige Fragen bezüglich seiner politischen Richtung stellen`);
-    function topic() {
-        let topics = ["Atomausstieg - Erfolg oder Scheitern", "Covid-19 - erfolgreiche Abwehr oder totale Katastrophe", "Ukraine-Krieg - Wie beendet man ihn?",
-            "Energiekrise - wer ist schuld?", "Klimawandel - gibt es ihn oder nicht?", "Klimawandel - besiegt er uns oder fast?", "Bildung - nur für die Dummen oder schlau gemacht?",];
-        return topics[Math.floor(Math.random() * topics.length)]
-    }
-}*/
 
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
