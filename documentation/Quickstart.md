@@ -60,6 +60,21 @@ If you suspect your bot token has been compromised, go back to the Discord Devel
 
    Note: The `mac-start` script assumes you have MongoDB installed via Homebrew and the respective service named `mongodb-community@7.0`.
 
+   If you are on GNU/Linuxand want to start MongoDB along with the bot you can use one of the follownig commands:
+
+   ```bash
+   npm run systemd-start
+   ```
+
+   or (depending if your OS uses systemd or System V Init)
+   
+   ```bash
+   npm run systemv-start
+   ```
+
+   Note: The `systemd-start` and `systemv-start` script assumes you have MongoDB installed using the package manager.
+
+
 ## Development
 
 1. **TypeScript Compilation**
