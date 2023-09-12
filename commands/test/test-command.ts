@@ -69,9 +69,9 @@ const checkForFeedbackRequests = async () => {
             await discordUser.send({
                 content: `
                 Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
-                Wir können Contraversum nur verbessern durch Feedback von unseren Nutzern. 
-                Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die depolarisierung 
-                der Gesellschaft wenn du uns Feedback geben könntest, es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
+                Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern. 
+                Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
+                der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
                 components: [actionRow]
             });
 

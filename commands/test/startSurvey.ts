@@ -11,7 +11,7 @@ export const Feedbackquestions = [
     'Wie gehst du normalerweise mit Menschen um, die politisch stark von dir abweichen?',
     'Was erhoffst du dir von einem Gespräch mit jemandem, der politisch anders denkt als du?',
     'Wie Alt bist du',
-    'Mit welchem Geschlecht identifizieren Sie sich?',
+    'Mit welchem Geschlecht identifizierst du dich?',
     'Was ist deine Tätigkeit (Beruf, Studienfach etc.)',
     'Gibt es sonst noch etwas, das du uns mitteilen möchtest?',
     'Was ist deine Mailadresse?'
