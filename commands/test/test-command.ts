@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role } from 'discord.js';
 import { client, db } from '../../index';
-import { DateTime } from 'luxon';
 import cron from 'cron';
 
 const questions = [
@@ -45,12 +44,12 @@ const questions = [
 ];
 
 const checkForFeedbackRequests = async () => {
-    const now = DateTime.now();
-    const oneWeekAgo = now.minus({ days: 7 });
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     const users = await db.db('contrabot').collection("users").find({
         completionTime: { 
-            $lt: oneWeekAgo.toISO()
+            $lt: oneWeekAgo.toISOString()
         },
         feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
     }).toArray();
@@ -93,7 +92,7 @@ const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks
 job.start();
 
 
-const sendQuestion = async (interaction: any) => {
+export const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
     
@@ -169,7 +168,7 @@ const sendQuestion = async (interaction: any) => {
             {
                 $set: {
                     currentQuestionIndex: 0,  // Reset to first question
-                    completionTime: DateTime.now().toISO(), // Set completion time
+                    completionTime: new Date().toISOString(), // Set completion time
                 }
             }
         );
@@ -252,4 +251,3 @@ export const execute = async (interaction: any) => {
     sendQuestion(interaction);
 };
 
-export { sendQuestion };
