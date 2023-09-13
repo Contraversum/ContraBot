@@ -1,11 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role } from 'discord.js';
 import { client, db } from '../../index';
+import cron from 'cron';
 
 const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
-    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },/*
+    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
     { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
@@ -39,10 +40,59 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
 ];
 
-const sendQuestion = async (interaction: any) => {
+const checkForFeedbackRequests = async () => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+
+    const users = await db.db('contrabot').collection("users").find({
+        completionTime: { 
+            $lt: oneWeekAgo.toISOString()
+        },
+        feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
+    }).toArray();
+
+    // Create a button to start the survey
+    const startSurveyButton = new ButtonBuilder()
+        .setCustomId('start_survey')
+        .setLabel('Jetzt Feedback geben')
+        .setStyle(ButtonStyle.Primary);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(startSurveyButton);
+
+    for (const user of users) {
+        const discordUser = await client.users.fetch(user.userId);
+        if (discordUser) {
+            await discordUser.send({
+                content: `
+                Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
+                Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern. 
+                Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
+                der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
+                components: [actionRow]
+            });
+
+            // Update context for this user in the database
+            await db.db('contrabot').collection("users").updateOne(
+                { userId: user.userId }, 
+                { 
+                    $set: { 
+                        feedbackRequestSent: true
+                    }
+                }
+            );
+        }
+    }
+};
+
+const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks for Feedback every hour
+job.start();
+
+
+export const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
@@ -88,7 +138,9 @@ const sendQuestion = async (interaction: any) => {
                     userId: interaction.user.id,
                     username: interaction.user.username,
                     currentQuestionIndex: currentQuestionIndex + 1,
-                    userVector: userResponses
+                    userVector: userResponses,
+                    feedbackRequestSent: false,
+                    currentFeedbackQuestionIndex: 0
                 }
             },
             { upsert: true }
@@ -125,6 +177,7 @@ const sendQuestion = async (interaction: any) => {
             {
                 $set: {
                     currentQuestionIndex: 0,  // Reset to first question
+                    completionTime: new Date().toISOString(), // Set completion time
                 }
             }
         );
@@ -260,4 +313,3 @@ export const execute = async (interaction: any) => {
     sendQuestion(interaction);
 };
 
-export { sendQuestion };
