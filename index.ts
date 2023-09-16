@@ -7,7 +7,8 @@ import path from 'path'
 import { MongoClient } from "mongodb";
 import { google } from 'googleapis';
 
-export const db = new MongoClient("mongodb://127.0.0.1:27017/");
+export const db = new MongoClient(process.env.MONGO_URL!);
+
 interface ClientWithCommands extends Client {
     commands: Collection<string, any>
 }
