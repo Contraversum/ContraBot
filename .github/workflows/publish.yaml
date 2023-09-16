@@ -1,7 +1,7 @@
 name: Publish
 
 #todo: change when done testing
-on: release
+on: push
 
 jobs:
   build:
