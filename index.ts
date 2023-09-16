@@ -1,5 +1,5 @@
+import 'dotenv/config'
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
-import { token } from './config.json';
 import { sendQuestion } from './commands/test/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './commands/test/startSurvey';
 import * as fs from 'fs';
@@ -7,16 +7,17 @@ import path from 'path'
 import { MongoClient } from "mongodb";
 import { google } from 'googleapis';
 
-export const db = new MongoClient("mongodb://127.0.0.1:27017/");
+export const db = new MongoClient(process.env.MONGO_URL!);
+
 interface ClientWithCommands extends Client {
     commands: Collection<string, any>
 }
-const client = new Client({ 
-    intents: [ 
+const client = new Client({
+    intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages, 
-        GatewayIntentBits.DirectMessages 
-    ] 
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages
+    ]
 }) as ClientWithCommands;
 
 
@@ -24,8 +25,7 @@ client.on(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
     await db.connect();
 });
-
-client.login(token); // Log in to the bot
+client.login(process.env.TOKEN); // Log in to the bot
 
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
@@ -73,51 +73,51 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 });
             }
         }
+        return;
     }
 
     // check if the interaction is a button interaction
-    else if (interaction.isButton()) {
+    if (interaction.isButton()) {
         const buttonId = interaction.customId;
 
         if (buttonId === 'start_survey') {
             await interaction.deferUpdate();
             sendSurveyQuestions(interaction);
-    
+
             // Update context for this user in the database to indicate feedback process has started
             await db.db('contrabot').collection("users").updateOne(
-                { userId: interaction.user.id }, 
-                { 
-                    $set: { 
+                { userId: interaction.user.id },
+                {
+                    $set: {
                         feedbackInProgress: true,
                         currentFeedbackQuestionIndex: 0
                     }
-                }, 
+                },
                 { upsert: true }
             );
-        }
-        else {
-        // Fetch user's context from the database
-        const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
+        } else {
+            // Fetch user's context from the database
+            const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-        let userResponses = userContext?.userVector || [];
+            const userResponses = userContext?.userVector || [];
 
-        // Update the userResponses based on button clicked
-        if (buttonId === 'agree') userResponses.push(1);
-        else if (buttonId === 'disagree') userResponses.push(-1);
-        else if (buttonId === 'neutral') userResponses.push(0);
+            // Update the userResponses based on button clicked
+            if (buttonId === 'agree') userResponses.push(1);
+            else if (buttonId === 'disagree') userResponses.push(-1);
+            else if (buttonId === 'neutral') userResponses.push(0);
 
-        // Update the userResponses for this user in the database
-        await db.db('contrabot').collection("users").updateOne(
-            { userId: interaction.user.id },
-            {
-                $set: {
-                    userVector: userResponses
+            // Update the userResponses for this user in the database
+            await db.db('contrabot').collection("users").updateOne(
+                { userId: interaction.user.id },
+                {
+                    $set: {
+                        userVector: userResponses
+                    }
                 }
-            }
-        );
+            );
 
-        await interaction.deferUpdate();
-        sendQuestion(interaction);
+            await interaction.deferUpdate();
+            sendQuestion(interaction);
         }
     }
 });
@@ -127,13 +127,12 @@ const SHEET_ID = '1pKsioVutiEPkNwTUrW1v_Y8bFe5eQobCGpK9KVpsOo8';
 const START_COLUMN = 'A';
 const END_COLUMN = 'P';
 const COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');  // to allow easy access to column names
-const sheetConfig = JSON.parse(fs.readFileSync('./sheetConfig.json', 'utf-8'));
 
 const jwtClient = new google.auth.JWT(
-  sheetConfig.client_email,
-  undefined,
-  sheetConfig.private_key,
-  ['https://www.googleapis.com/auth/spreadsheets']
+    process.env.CLIENT_EMAIL,
+    undefined,
+    process.env.PRIVATE_KEY,
+    [ 'https://www.googleapis.com/auth/spreadsheets' ]
 );
 
 const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -147,9 +146,9 @@ client.on(Events.MessageCreate, async (message) => {
 
         if (userContext?.feedbackInProgress) {
             let currentFeedbackQuestionIndex = userContext?.currentFeedbackQuestionIndex || 0;
-            
+
             // Calculate the column where the answer should be placed.
-            const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
+            const columnForAnswer = COLUMNS[ currentFeedbackQuestionIndex + 1 ];  // +1 to skip the first column which might have the userID
 
             // Find the row number for the current user (assuming the user's ID is in the first column)
             const response = await sheets.spreadsheets.values.get({
@@ -157,7 +156,7 @@ client.on(Events.MessageCreate, async (message) => {
                 range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
             });
             const rows = response.data.values || [];
-            let rowIndex = rows.findIndex(row => row[0] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+            let rowIndex = rows.findIndex((row: any) => row[ 0 ] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
 
             // If the user is not found, create a new row for them
             if (rowIndex === 0) {
@@ -168,7 +167,7 @@ client.on(Events.MessageCreate, async (message) => {
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
                         values: [
-                            [message.author.id]  // userID in the first column
+                            [ message.author.id ]  // userID in the first column
                         ]
                     }
                 } as any);
@@ -182,7 +181,7 @@ client.on(Events.MessageCreate, async (message) => {
                 valueInputOption: 'RAW',
                 resource: {
                     values: [
-                        [message.content]
+                        [ message.content ]
                     ]
                 }
             } as any);
@@ -190,21 +189,21 @@ client.on(Events.MessageCreate, async (message) => {
             currentFeedbackQuestionIndex++;
 
             if (currentFeedbackQuestionIndex < Feedbackquestions.length) {
-                message.author.send(Feedbackquestions[currentFeedbackQuestionIndex]);
+                message.author.send(Feedbackquestions[ currentFeedbackQuestionIndex ]);
 
                 await db.db('contrabot').collection("users").updateOne(
-                    { userId: message.author.id }, 
-                    { 
-                        $set: { 
+                    { userId: message.author.id },
+                    {
+                        $set: {
                             currentFeedbackQuestionIndex: currentFeedbackQuestionIndex
                         }
                     }
                 );
             } else {
                 await db.db('contrabot').collection("users").updateOne(
-                    { userId: message.author.id }, 
-                    { 
-                        $set: { 
+                    { userId: message.author.id },
+                    {
+                        $set: {
                             feedbackInProgress: false
                         }
                     }
