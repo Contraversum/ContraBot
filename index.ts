@@ -72,10 +72,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 });
             }
         }
+        return;
     }
 
     // check if the interaction is a button interaction
-    else if (interaction.isButton()) {
+    if (interaction.isButton()) {
         const buttonId = interaction.customId;
 
         if (buttonId === 'start_survey') {
@@ -93,12 +94,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 },
                 { upsert: true }
             );
-        }
-        else {
+        } else {
             // Fetch user's context from the database
             const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-            let userResponses = userContext?.userVector || [];
+            const userResponses = userContext?.userVector || [];
 
             // Update the userResponses based on button clicked
             if (buttonId === 'agree') userResponses.push(1);
@@ -126,12 +126,11 @@ const SHEET_ID = '1pKsioVutiEPkNwTUrW1v_Y8bFe5eQobCGpK9KVpsOo8';
 const START_COLUMN = 'A';
 const END_COLUMN = 'P';
 const COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');  // to allow easy access to column names
-const sheetConfig = JSON.parse(fs.readFileSync('./sheetConfig.json', 'utf-8'));
 
 const jwtClient = new google.auth.JWT(
-    sheetConfig.client_email,
+    process.env.CLIENT_EMAIL,
     undefined,
-    sheetConfig.private_key,
+    process.env.PRIVATE_KEY,
     [ 'https://www.googleapis.com/auth/spreadsheets' ]
 );
 
