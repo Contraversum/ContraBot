@@ -3,4 +3,4 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD [ "ts-node", "index.ts" ]
+CMD [ "npx", "ts-node", "index.ts" ]
