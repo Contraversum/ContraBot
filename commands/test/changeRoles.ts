@@ -2,121 +2,22 @@ import { Guild, Role } from 'discord.js';
 import { client, db } from '../../index';
 import cron from 'cron';
 
-/*
-
-const checkInvites = async () => {
-    const users = await db.db('contrabot').collection("users").find({}).toArray();
-
-    if (!Array.isArray(users)) {
-        console.error("Error retrieving users from database");
-        return null;
-    }
-
-    const REQUIRED_INVITES = 3;
-
-
-
-
-    client.on('ready', () => {
-        console.log(`Logged in as ${client.user?.tag}`);
-
-        const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
-        if (!guild) {
-            console.error('Guild not found');
-            return;
-        }
-
-        const role: Role | undefined = guild.roles.cache.get('1151603003279802498');
-        if (!role) {
-            console.error('Role not found');
-            return;
-        }
-
-
-        // Fetch the invites for the server
-        guild.invites.fetch().then((invites) => {
-            guild.members.cache.forEach((member) => {
-                if (!member.user.bot) {
-                    const userInvites = invites.filter((invite) => invite.inviter && invite.inviter.id === member.id);
-                    const inviteCount = userInvites.reduce((total, invite) => total + (invite.uses || 0), 0);
-
-                    if (inviteCount >= REQUIRED_INVITES && !member.roles.cache.has(role.id)) {
-                        member.roles.add(role).catch(console.error);
-                        console.log(`${member.displayName} has been assigned the role.`);
-                    } else if (inviteCount < REQUIRED_INVITES && member.roles.cache.has(role.id)) {
-                        member.roles.remove(role).catch(console.error);
-                        console.log(`${member.displayName} no longer meets the invite requirements.`);
-                    }
-                }
-            });
-        });
-    })
-}
-
-
-const job = new cron.CronJob('0 0 * * * *', checkInvites); // checks for invites every hour
-job.start();
-
-
-
-
-
-client.on('inviteCreate', async invite => {
-    const invites = await invite.guild.invites.fetch();
-
-    const codeUses = new Map();
-    invites.each(inv => codeUses.set(inv.code, inv.uses));
-
-    guildInvites.set(invite.guild.id, codeUses);
-})
-
-client.once('ready', () => {
-    client.guilds.cache.forEach(guild => {
-        guild.invites.fetch()
-            .then(invites => {
-                console.log("INVITES CACHED");
-                const codeUses = new Map();
-                invites.each(inv => codeUses.set(inv.code, inv.uses));
-
-                guildInvites.set(guild.id, codeUses);
-            })
-            .catch(err => {
-                console.log("OnReady Error:", err)
-            })
-    })
-})
-
-client.on('guildMemberAdd', async member => {
-    const cachedInvites = guildInvites.get(member.guild.id)
-    const newInvites = await member.guild.invites.fetch();
-    try {
-        const usedInvite = newInvites.find(inv => cachedInvites.get(inv.code) < inv.uses);
-        console.log("Cached", [...cachedInvites.keys()])
-        console.log("New", [...newInvites.values()].map(inv => inv.code))
-        console.log("Used", usedInvite)
-        console.log(`The code ${usedInvite.code} was just used by ${member.user.username}.`)
-    } catch (err) {
-        console.log("OnGuildMemberAdd Error:", err)
-    }
-
-    newInvites.each(inv => cachedInvites.set(inv.code, inv.uses));
-    guildInvites.set(member.guild.id, cachedInvites);
-});
-
-*/
 
 async function hi() {
+
+    console.log('change Roles is working!')
+
     // Fetch users from the database
     const users = await db.db('contrabot').collection("users").find({}).toArray();
 
     // Get the guild and role
-    const guild = client.guilds.cache.get('1131613084553859182');
+    const guild = client.guilds.cache.get('1119231777391788062');
     if (!guild) {
         console.error('Guild not found');
         return;
     }
 
-    const role = guild.roles.cache.get('1151603003279802498');
+    const role = guild.roles.cache.get('1153789870582550598');
     if (!role) {
         console.error('Role not found');
         return;
@@ -197,5 +98,5 @@ async function hi() {
     }
 }
 
-const job = new cron.CronJob('0 0 * * * *', hi); // checks for invites every hour
+const job = new cron.CronJob('0 * * * * *', hi); // checks for invites every hour
 //job.start();

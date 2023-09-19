@@ -291,12 +291,12 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 }
 
 function verifyUser(interaction: any) {
-    const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
+    const guild: Guild | undefined = client.guilds.cache.get('1119231777391788062');
     if (!guild) {
         console.error('Guild not found');
         return;
     }
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486');
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
     if (!role) {
         console.error('Role not found');
         return;
