@@ -48,7 +48,7 @@ const checkForFeedbackRequests = async () => {
     const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     const users = await db.db('contrabot').collection("users").find({
-        completionTime: { 
+        completionTime: {
             $lt: oneWeekAgo.toISOString()
         },
         feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
@@ -77,9 +77,9 @@ const checkForFeedbackRequests = async () => {
 
             // Update context for this user in the database
             await db.db('contrabot').collection("users").updateOne(
-                { userId: user.userId }, 
-                { 
-                    $set: { 
+                { userId: user.userId },
+                {
+                    $set: {
                         feedbackRequestSent: true
                     }
                 }
@@ -140,7 +140,10 @@ export const sendQuestion = async (interaction: any) => {
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
                     feedbackRequestSent: false,
-                    currentFeedbackQuestionIndex: 0
+                    currentFeedbackQuestionIndex: 0,
+                    invited: interaction.user.invited,
+                    joined: interaction.user.joinedTimestamp
+
                 }
             },
             { upsert: true }
@@ -148,6 +151,8 @@ export const sendQuestion = async (interaction: any) => {
     } else {
         console.log(userResponses);
         console.log(interaction.user.id);
+
+
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
