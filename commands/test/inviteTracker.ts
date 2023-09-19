@@ -49,12 +49,21 @@ async function trackInvites() {
         );
 
         // Role assignment logic here based on inviteCount
-        const role: Role | undefined = guild.roles.cache.get('1153789870582550598');
+        const role1: Role | undefined = guild.roles.cache.get('1153789870582550598');
+        const role2: Role | undefined = guild.roles.cache.get('1153796740072349726');
 
-        if (inviteCount >= 2 && role) {
+        if (inviteCount == 2 && role1) {
             const member = await guild.members.fetch(userId);
             if (member) {
-                await member.roles.add(role).catch(console.error);
+                await member.roles.add(role1).catch(console.error);
+            } else {
+                console.error('Member not found');
+            }
+        }
+        else if (inviteCount > 2 && role2) {
+            const member = await guild.members.fetch(userId);
+            if (member) {
+                await member.roles.add(role2).catch(console.error);
             } else {
                 console.error('Member not found');
             }
@@ -62,5 +71,5 @@ async function trackInvites() {
     }
 }
 
-const job = new cron.CronJob('0 * * * * *', trackInvites); // checks for invites every hour
+const job = new cron.CronJob('0 * * * * *', trackInvites); // checks for invites every minute
 job.start();
