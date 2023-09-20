@@ -18,7 +18,7 @@
         "dotenv": "^16.3.1",
         "googleapis": "^126.0.1",
         "mongodb": "^5.8.1",
-        "npx": "^10.2.2",
+        "npx": "^3.0.0",
         "typescript": "^5.1.6"
     },
     "devDependencies": {

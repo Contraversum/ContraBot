@@ -40,7 +40,7 @@ async function trackInvites() {
             continue; // Skip this user and continue with others
         }
 
-        const inviteCount = inviteData[userId] || 0;
+        let inviteCount = inviteData[userId] || 0;
 
         // Update the invite count for the user in the database
         await db.db('contrabot').collection('users').updateOne(
@@ -48,28 +48,50 @@ async function trackInvites() {
             { $set: { inviteCount: inviteCount } }
         );
 
-        // Role assignment logic here based on inviteCount
-        const role1: Role | undefined = guild.roles.cache.get('1153789870582550598');
-        const role2: Role | undefined = guild.roles.cache.get('1153796740072349726');
 
-        if (inviteCount == 2 && role1) {
-            const member = await guild.members.fetch(userId);
-            if (member) {
-                await member.roles.add(role1).catch(console.error);
+        const rolesToAssign = [
+            { role: guild.roles.cache.get('1153789870582550598'), minInviteCount: 0, maxInviteCount: 2 },
+            { role: guild.roles.cache.get('1153796740072349726'), minInviteCount: 3, maxInviteCount: 4 },
+            { role: guild.roles.cache.get('1153992358212423730'), minInviteCount: 5, maxInviteCount: Infinity },
+        ];
+
+        for (const { role, minInviteCount, maxInviteCount } of rolesToAssign) {
+            if (role) { // Check if role is defined (not undefined)
+                if (inviteCount >= minInviteCount && inviteCount <= maxInviteCount) {
+                    assignRoleIfQualified(role, userId, guild);
+                    break; // Stop after assigning the highest matching role
+                }
             } else {
-                console.error('Member not found');
+                console.error(`Role not found for user ${userId}`);
             }
         }
-        else if (inviteCount > 2 && role2) {
-            const member = await guild.members.fetch(userId);
-            if (member) {
-                await member.roles.add(role2).catch(console.error);
-            } else {
-                console.error('Member not found');
-            }
-        }
+
     }
 }
+
+async function assignRoleIfQualified(role: Role, userId: any, guild: Guild) {
+    const member = await guild.members.fetch(userId);
+    if (member) {
+        if (!member.roles.cache.has(role.id)) {
+            await member.roles.add(role).catch(console.error);
+        }
+    } else {
+        console.error('Member not found');
+    }
+}
+/*
+async function removeRoles(userId: any, rolesToRemove: any, guild: Guild) {
+    const member = await guild.members.fetch(userId);
+    if (member) {
+        for (const role of rolesToRemove) {
+            if (member.roles.cache.has(role.id)) {
+                await member.roles.remove(role).catch(console.error);
+            }
+        }
+    } else {
+        console.error('Member not found');
+    }
+}*/
 
 const job = new cron.CronJob('0 * * * * *', trackInvites); // checks for invites every minute
 job.start();

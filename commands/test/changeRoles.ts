@@ -2,24 +2,16 @@ import { Guild, Role } from 'discord.js';
 import { client, db } from '../../index';
 import cron from 'cron';
 
-
 async function hi() {
-
     console.log('change Roles is working!')
 
     // Fetch users from the database
     const users = await db.db('contrabot').collection("users").find({}).toArray();
 
-    // Get the guild and role
+    // Get the guild and roles
     const guild = client.guilds.cache.get('1119231777391788062');
     if (!guild) {
         console.error('Guild not found');
-        return;
-    }
-
-    const role = guild.roles.cache.get('1153789870582550598');
-    if (!role) {
-        console.error('Role not found');
         return;
     }
 
@@ -34,14 +26,11 @@ async function hi() {
         firstInvites.forEach((invite) => {
             if (invite.uses !== null && invite.inviter) {
                 const inviterId = invite.inviter.id;
-
-                // Find the user in the 'users' array
-                const user = users.find((user) => user.discordId === inviterId);
+                const user = users.find((user) => user.userId === inviterId);
 
                 if (user) {
-                    // Store invite data based on user
-                    invites[user.discordId] = invites[user.discordId] || {};
-                    invites[user.discordId][invite.code] = invite.uses;
+                    invites[user.userId] = invites[user.userId] || {};
+                    invites[user.userId][invite.code] = invite.uses;
                 }
             }
         });
@@ -54,12 +43,10 @@ async function hi() {
     client.on("inviteDelete", (invite) => {
         if (invite.inviter) {
             const inviterId = invite.inviter.id;
+            const user = users.find((user) => user.userId === inviterId);
 
-            // Find the user in the 'users' array
-            const user = users.find((user) => user.discordId === inviterId);
-
-            if (user && invites[user.discordId]) {
-                delete invites[user.discordId][invite.code];
+            if (user && invites[user.userId]) {
+                delete invites[user.userId][invite.code];
             }
         }
     });
@@ -68,35 +55,51 @@ async function hi() {
     client.on("inviteCreate", (invite) => {
         if (invite.inviter) {
             const inviterId = invite.inviter.id;
-
-            // Find the user in the 'users' array
-            const user = users.find((user) => user.discordId === inviterId);
+            const user = users.find((user) => user.userId === inviterId);
 
             if (user) {
-                // Store invite data based on user, ensuring invite.uses is a valid number
                 if (typeof invite.uses === 'number') {
-                    invites[user.discordId] = invites[user.discordId] || {};
-                    invites[user.discordId][invite.code] = invite.uses;
+                    invites[user.userId] = invites[user.userId] || {};
+                    invites[user.userId][invite.code] = invite.uses;
                 }
             }
         }
     });
 
-    // Update the 'invite' property for all users
+    // Update the 'invite' property for all users and assign roles based on inviteCount
     for (const userId in invites) {
+        if (!userId) {
+            console.error('Member ID not found for a user');
+            continue;
+        }
+
         const inviteCount = Object.values(invites[userId]).reduce((acc, count) => acc + count, 0);
 
-        // Update the 'invite' property for each user
-        await db.db('contrabot').collection("users").updateOne(
-            { discordId: userId },
-            {
-                $set: {
-                    invite: inviteCount,
-                }
+        const rolesToAssign = [
+            { role: '1153789870582550598', minInviteCount: 0, maxInviteCount: 2 },
+            { role: '1153796740072349726', minInviteCount: 3, maxInviteCount: 4 },
+            { role: '1153992358212423730', minInviteCount: 5, maxInviteCount: Infinity },
+        ];
+
+        for (const { role, minInviteCount, maxInviteCount } of rolesToAssign) {
+            if (inviteCount >= minInviteCount && inviteCount <= maxInviteCount) {
+                assignRoleIfQualified(role, userId, guild);
+                break; // Stop after assigning the highest matching role
             }
-        );
+        }
     }
 }
 
-const job = new cron.CronJob('0 * * * * *', hi); // checks for invites every hour
+async function assignRoleIfQualified(roleId: string, userId: any, guild: Guild) {
+    const member = await guild.members.fetch(userId);
+    if (member) {
+        if (!member.roles.cache.has(roleId)) {
+            await member.roles.add(roleId).catch(console.error);
+        }
+    } else {
+        console.error('Member not found');
+    }
+}
+
+const job = new cron.CronJob('0 * * * * *', hi); // checks for invites every minute
 //job.start();
