@@ -54,6 +54,11 @@ The production bot uses a MongoDB database. You can set up a MongoDB database us
 2. Create a database called 'contrabot'
 3. Create a collection called 'users'
 
+### Acessing the live database
+
+You can access the live database using the following steps:
+
+
 ## Running the Bot
 
 1. **Start the Bot**
