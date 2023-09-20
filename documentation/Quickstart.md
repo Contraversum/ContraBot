@@ -38,9 +38,21 @@ Navigate to the "Bot" tab .
 Under the "TOKEN" section, click "Copy" to get your bot token.
 Setting Up the Token Locally:
 
-Create a config.json file in the root directory of the project.
+Create a '.env' file in the root directory of the project.
 Inside the config file, set your token like this: token:"XXX".
-If you suspect your bot token has been compromised, go back to the Discord Developer Portal and regenerate the token immediately.
+If you suspect your bot token has been compromised, go back to the Discord Developer Portal and regenerate the token immediately. Along with the Token you will need to set up the other secrets that can be found in the moderator channel of the Contraversum Discord server.
+
+## Setting up for production
+
+You will need to join the ContraversumTest Discord Server. Here you will find the production bot. You can access the production bot by creating a branch from the 'pre-production' branch and altering the .env file. With the secrets that can be found in the moderator channel of the Contraversum Discord server.
+
+### Setting up the MongoDB database
+
+The production bot uses a MongoDB database. You can set up a MongoDB database using the following steps:
+
+1. Install MongoDB https://www.mongodb.com/docs/manual/administration/install-community/
+2. Create a database called 'contrabot'
+3. Create a collection called 'users'
 
 ## Running the Bot
 
