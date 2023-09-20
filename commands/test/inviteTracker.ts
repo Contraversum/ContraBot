@@ -1,4 +1,4 @@
-import { Guild, Role } from 'discord.js';
+import { Guild, GuildMember, Role, Collection } from 'discord.js';
 import { client, db } from '../../index';
 import cron from 'cron';
 
@@ -17,6 +17,7 @@ async function trackInvites() {
     // Create an object to store invite data per user
     const inviteData: { [key: string]: number } = {};
 
+    // Store number of invites per inviter
     invites.forEach((invite) => {
         const inviter = invite.inviter;
 
@@ -30,7 +31,7 @@ async function trackInvites() {
     });
 
 
-    // Update the user invite counts in your database
+    // Update the user invite counts
     const users = await db.db('contrabot').collection('users').find({}).toArray();
 
     for (const user of users) {
@@ -48,54 +49,50 @@ async function trackInvites() {
             { $set: { inviteCount: inviteCount } }
         );
 
-
-        const rolesToAssign = [
-            { role: guild.roles.cache.get('1153789870582550598'), minInviteCount: 1, maxInviteCount: 2 },
-            { role: guild.roles.cache.get('1153796740072349726'), minInviteCount: 3, maxInviteCount: 4 },
-            { role: guild.roles.cache.get('1153992358212423730'), minInviteCount: 5, maxInviteCount: Infinity },
-        ];
-        const rolesToRemove = rolesToAssign.map((roleData) => roleData.role).filter((role) => role !== undefined);
-
-        for (const { role, minInviteCount, maxInviteCount } of rolesToAssign) {
-            if (role) {
-                if (inviteCount >= minInviteCount && inviteCount <= maxInviteCount) {
-                    assignRoleIfQualified(role, userId, guild);
-                    rolesToRemove.splice(rolesToRemove.indexOf(role), 1);
-                    break; // Stop after assigning the highest matching role
-                }
-            } else {
-                console.error(`Role not found for user ${userId}`);
-            }
-        }
-        removeRoles(userId, rolesToRemove, guild)
+        assignRoles(inviteCount, userId, guild);
     }
 }
 
-async function assignRoleIfQualified(role: Role, userId: any, guild: Guild) {
+
+async function assignRoles(inviteCount: number, userId: string, guild: Guild) {
+    const rolesToAssign = [
+        { role: '1153789870582550598', minInviteCount: 1, maxInviteCount: 2 },
+        { role: '1153796740072349726', minInviteCount: 3, maxInviteCount: 4 },
+        { role: '1153992358212423730', minInviteCount: 5, maxInviteCount: Infinity },
+    ];
+    const rolesToRemove: Collection<string, Role> = new Collection();
+
     const member = await guild.members.fetch(userId);
-    if (member) {
-        if (!member.roles.cache.has(role.id)) {
-            await member.roles.add(role).catch(console.error);
+
+    for (const { role, minInviteCount, maxInviteCount } of rolesToAssign) {
+        const targetRole = guild.roles.cache.get(role);
+
+        if (!targetRole) {
+            console.error(`Role not found for user ${userId} `);
+            continue;
+        } else if (!member) {
+            console.error(`Member not found`);
+            continue;
         }
-    } else {
-        console.error('Member not found');
-    }
-}
-async function removeRoles(userId: any, rolesToRemove: any, guild: Guild) {
-    const member = await guild.members.fetch(userId);
-    if (member) {
-        for (const role of rolesToRemove) {
-            if (member.roles.cache.has(role.id)) {
-                console.log(`Removing role ${role.name} from user ${userId}`);
-                await member.roles.remove(role).catch(console.error);
-            } else {
-                console.log(`User ${userId} does not have role ${role.name}`);
+
+        if (inviteCount >= minInviteCount && inviteCount <= maxInviteCount) {
+            if (!member.roles.cache.has(targetRole.id)) {
+                await member.roles.add(targetRole).catch(console.error);
             }
+        } else {
+            rolesToRemove.set(targetRole.id, targetRole);
         }
-    } else {
-        console.error('Member not found');
+    }
+    removeRoles(rolesToRemove, member);
+}
+
+async function removeRoles(rolesToRemove: Collection<string, Role>, member: GuildMember) {
+    for (const role of rolesToRemove.values()) {
+        if (member.roles.cache.has(role.id)) {
+            await member.roles.remove(role).catch(console.error);
+        }
     }
 }
 
-const job = new cron.CronJob('0 * * * * *', trackInvites); // checks for invites every minute
+const job = new cron.CronJob('0 0 * * * *', trackInvites); // checks for invites every hour
 job.start();
