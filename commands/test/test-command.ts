@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role } from 'discord.js';
-import { client, db } from '../../index';
+import { client, db } from '../../common';
 import cron from 'cron';
 
 const questions = [
@@ -48,7 +48,7 @@ const checkForFeedbackRequests = async () => {
     const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     const users = await db.db('contrabot').collection("users").find({
-        completionTime: { 
+        completionTime: {
             $lt: oneWeekAgo.toISOString()
         },
         feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
@@ -77,9 +77,9 @@ const checkForFeedbackRequests = async () => {
 
             // Update context for this user in the database
             await db.db('contrabot').collection("users").updateOne(
-                { userId: user.userId }, 
-                { 
-                    $set: { 
+                { userId: user.userId },
+                {
+                    $set: {
                         feedbackRequestSent: true
                     }
                 }

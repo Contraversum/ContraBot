@@ -1,25 +1,11 @@
 import 'dotenv/config'
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Events } from 'discord.js';
 import { sendQuestion } from './commands/test/test-command';
-import { sendSurveyQuestions, Feedbackquestions } from './commands/test/startSurvey';
+import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
 import * as fs from 'fs';
 import path from 'path'
-import { MongoClient } from "mongodb";
 import { google } from 'googleapis';
-
-export const db = new MongoClient(process.env.MONGO_URL!);
-
-interface ClientWithCommands extends Client {
-    commands: Collection<string, any>
-}
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.DirectMessages
-    ]
-}) as ClientWithCommands;
-
+import { client, db, ClientWithCommands } from './common';
 
 client.on(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
@@ -27,17 +13,15 @@ client.on(Events.ClientReady, async (c) => {
 });
 client.login(process.env.TOKEN); // Log in to the bot
 
-client.commands = new Collection();
+// Load commands
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
-
 for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
         } else {
@@ -132,7 +116,7 @@ const jwtClient = new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     undefined,
     process.env.PRIVATE_KEY,
-    [ 'https://www.googleapis.com/auth/spreadsheets' ]
+    ['https://www.googleapis.com/auth/spreadsheets']
 );
 
 const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -148,7 +132,7 @@ client.on(Events.MessageCreate, async (message) => {
             let currentFeedbackQuestionIndex = userContext?.currentFeedbackQuestionIndex || 0;
 
             // Calculate the column where the answer should be placed.
-            const columnForAnswer = COLUMNS[ currentFeedbackQuestionIndex + 1 ];  // +1 to skip the first column which might have the userID
+            const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
 
             // Find the row number for the current user (assuming the user's ID is in the first column)
             const response = await sheets.spreadsheets.values.get({
@@ -156,7 +140,7 @@ client.on(Events.MessageCreate, async (message) => {
                 range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
             });
             const rows = response.data.values || [];
-            let rowIndex = rows.findIndex((row: any) => row[ 0 ] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+            let rowIndex = rows.findIndex((row: any) => row[0] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
 
             // If the user is not found, create a new row for them
             if (rowIndex === 0) {
@@ -167,7 +151,7 @@ client.on(Events.MessageCreate, async (message) => {
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
                         values: [
-                            [ message.author.id ]  // userID in the first column
+                            [message.author.id]  // userID in the first column
                         ]
                     }
                 } as any);
@@ -181,7 +165,7 @@ client.on(Events.MessageCreate, async (message) => {
                 valueInputOption: 'RAW',
                 resource: {
                     values: [
-                        [ message.content ]
+                        [message.content]
                     ]
                 }
             } as any);
@@ -189,7 +173,7 @@ client.on(Events.MessageCreate, async (message) => {
             currentFeedbackQuestionIndex++;
 
             if (currentFeedbackQuestionIndex < Feedbackquestions.length) {
-                message.author.send(Feedbackquestions[ currentFeedbackQuestionIndex ]);
+                message.author.send(Feedbackquestions[currentFeedbackQuestionIndex]);
 
                 await db.db('contrabot').collection("users").updateOne(
                     { userId: message.author.id },
