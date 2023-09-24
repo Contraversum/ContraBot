@@ -1,11 +1,13 @@
 import { Guild, GuildMember, Role, Collection } from 'discord.js';
-import { client, db } from '../../index';
-import cron from 'cron';
+import { client, db } from './index';
 
 async function trackInvites() {
-    console.log('Invite tracker is working!');
-
-    const guild: Guild | undefined = client.guilds.cache.get('1119231777391788062');
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+        console.error('GUILD_ID is not defined in .env');
+        return;
+    }
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) {
         console.error('Guild not found');
         return;
@@ -57,8 +59,8 @@ async function trackInvites() {
 async function assignRoles(inviteCount: number, userId: string, guild: Guild) {
     const rolesToAssign = [
         { role: '1153789870582550598', minInviteCount: 1, maxInviteCount: 2 },
-        { role: '1153796740072349726', minInviteCount: 3, maxInviteCount: 4 },
-        { role: '1153992358212423730', minInviteCount: 5, maxInviteCount: Infinity },
+        { role: '1153796740072349726', minInviteCount: 3, maxInviteCount: 10 },
+        { role: '1153992358212423730', minInviteCount: 11, maxInviteCount: Infinity },
     ];
     const rolesToRemove: Collection<string, Role> = new Collection();
 
@@ -93,11 +95,6 @@ async function removeRoles(rolesToRemove: Collection<string, Role>, member: Guil
         }
     }
 }
-client.on('guildMemberAdd', (member) => {
-    // This function will be executed whenever a new member joins a guild
-    trackInvites;
+client.on('guildMemberAdd', () => {
+    trackInvites();
 });
-
-// For testing purpouses only
-const job = new cron.CronJob('0 * * * * *', trackInvites); // checks for invites every hour
-job.start();
