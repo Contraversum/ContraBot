@@ -201,4 +201,4 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 
-export { client };
+export { client, db };
