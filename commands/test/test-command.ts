@@ -1,6 +1,7 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role } from 'discord.js';
-import { client, db } from '../../index';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User } from 'discord.js';
+import { client, db } from '../../common';
 import cron from 'cron';
+import 'dotenv/config'
 
 const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
@@ -48,7 +49,7 @@ const checkForFeedbackRequests = async () => {
     const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     const users = await db.db('contrabot').collection("users").find({
-        completionTime: { 
+        completionTime: {
             $lt: oneWeekAgo.toISOString()
         },
         feedbackRequestSent: { $ne: true } // This ensures that you don't ask for feedback multiple times
@@ -77,9 +78,9 @@ const checkForFeedbackRequests = async () => {
 
             // Update context for this user in the database
             await db.db('contrabot').collection("users").updateOne(
-                { userId: user.userId }, 
-                { 
-                    $set: { 
+                { userId: user.userId },
+                {
+                    $set: {
                         feedbackRequestSent: true
                     }
                 }
@@ -140,7 +141,10 @@ export const sendQuestion = async (interaction: any) => {
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
                     feedbackRequestSent: false,
-                    currentFeedbackQuestionIndex: 0
+                    currentFeedbackQuestionIndex: 0,
+                    invited: interaction.user.invited,
+                    joined: interaction.user.joinedTimestamp
+
                 }
             },
             { upsert: true }
@@ -149,19 +153,22 @@ export const sendQuestion = async (interaction: any) => {
         console.log(userResponses);
         console.log(interaction.user.id);
 
+
+
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
         if (bestMatch) {
             interaction.user.send(`Dein bester Gesprächspartner ist: **@${bestMatch.username}**.`);
             interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum-Server klickst 👆 und ihm eine Nachricht sendest.");
             interaction.user.send("Dies sind drei Fragen bei denen ihr euch unterscheidet:");
-            conversationStarter(interaction, bestMatch.userVector, userResponses);
 
             // Send the best match that they have been matched with the user
             const bestMatchUser = await client.users.fetch(bestMatch.userId);
             if (bestMatchUser) {
                 bestMatchUser.send(`Hey 👋, du wurdest mit: **@${interaction.user.username}** gematched.`);
+                bestMatchUser.send("Ihr habt euch bei diesen drei Fragen beispielsweise unterschieden:");
             }
+            conversationStarter(interaction, bestMatch.userVector, userResponses, bestMatchUser)
         }
         else {
             console.warn('No best match found');
@@ -187,7 +194,7 @@ export const sendQuestion = async (interaction: any) => {
 
 
 
-async function conversationStarter(interaction: any, bestMatch: number[], user: number[]) {
+async function conversationStarter(interaction: any, bestMatch: number[], user: number[], bestMatchUser: User) {
 
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
@@ -201,7 +208,7 @@ async function conversationStarter(interaction: any, bestMatch: number[], user: 
         }
     });
     // Only add to disagree if the flag is still false
-    if (!addedToDisagree) {
+    if (!addedToDisagree || disagree.length < 6) {
         user.forEach((value, i) => {
             const total = value + bestMatch[i];
             if (Math.abs(total) === 1) {
@@ -210,13 +217,20 @@ async function conversationStarter(interaction: any, bestMatch: number[], user: 
         });
     }
 
-    // selects 3 random disagreements and prints them
-    function getRandomDisagreement(arr: number[], num: number) {
-        return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
+    const selectedIndexes = getRandomDisagreement(disagree, 6);
+    sendDisagreedQuestions(interaction.user, selectedIndexes.slice(0, 3));
+    if (bestMatchUser) {
+        sendDisagreedQuestions(bestMatchUser, selectedIndexes.slice(-3))
     }
-    const selectedIndexes = getRandomDisagreement(disagree, 3)
-    selectedIndexes.forEach((value) => {
-        interaction.user.send({
+}
+
+function getRandomDisagreement(arr: number[], num: number) {
+    return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
+}
+
+function sendDisagreedQuestions(user: User, disagree: number[]) {
+    disagree.forEach((value) => {
+        user.send({
             embeds: [
                 new EmbedBuilder()
                     .setTitle(`Frage: ${value + 1}/38`)
@@ -227,14 +241,15 @@ async function conversationStarter(interaction: any, bestMatch: number[], user: 
     });
 
     // Make it so that the tags of the questions are printed properly
-    const selectedTags = selectedIndexes
+    const selectedTags = disagree
         .map(index => questions[index].tag)
         .filter(tag => tag)
         .slice(0, 3);
 
     const topicsMessage = `Als Gesprächsthemen können z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
-    interaction.user.send(topicsMessage);
+    user.send(topicsMessage);
 }
+
 
 
 async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[] } | null> {
@@ -286,12 +301,18 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 }
 
 function verifyUser(interaction: any) {
-    const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+        console.error('GUILD_ID is not defined in .env');
+        return;
+    }
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) {
         console.error('Guild not found');
         return;
     }
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486');
+
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
     if (!role) {
         console.error('Role not found');
         return;

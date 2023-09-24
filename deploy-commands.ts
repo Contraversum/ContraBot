@@ -1,6 +1,8 @@
 import { REST, Routes } from 'discord.js';
+import 'dotenv/config'
 import fs from 'fs';
 import path from 'path';
+import 'dotenv/config'
 
 const commands = [];
 const foldersPath = path.join(__dirname, 'commands');
