@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role } from 'discord.js';
 import { client, db } from '../../index';
 import cron from 'cron';
+import 'dotenv/config'
 
 const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
@@ -291,11 +292,17 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 }
 
 function verifyUser(interaction: any) {
-    const guild: Guild | undefined = client.guilds.cache.get('1119231777391788062');
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+        console.error('GUILD_ID is not defined in .env');
+        return;
+    }
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) {
         console.error('Guild not found');
         return;
     }
+
     const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
     if (!role) {
         console.error('Role not found');
