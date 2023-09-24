@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User } from 'discord.js';
 import { client, db } from '../../common';
 import cron from 'cron';
+import 'dotenv/config'
 
 const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
@@ -140,7 +141,10 @@ export const sendQuestion = async (interaction: any) => {
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
                     feedbackRequestSent: false,
-                    currentFeedbackQuestionIndex: 0
+                    currentFeedbackQuestionIndex: 0,
+                    invited: interaction.user.invited,
+                    joined: interaction.user.joinedTimestamp
+
                 }
             },
             { upsert: true }
@@ -148,6 +152,8 @@ export const sendQuestion = async (interaction: any) => {
     } else {
         console.log(userResponses);
         console.log(interaction.user.id);
+
+
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
@@ -295,12 +301,18 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 }
 
 function verifyUser(interaction: any) {
-    const guild: Guild | undefined = client.guilds.cache.get('1131613084553859182');
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+        console.error('GUILD_ID is not defined in .env');
+        return;
+    }
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) {
         console.error('Guild not found');
         return;
     }
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486');
+
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
     if (!role) {
         console.error('Role not found');
         return;
