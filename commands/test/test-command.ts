@@ -105,19 +105,67 @@ const sendTestButton = async () => {
         .addComponents(button);
 
     const guildId = process.env.GUILD_ID;
-    if (!guildId) {
-        console.error('GUILD_ID is not defined in .env');
-        return;
-    }
+    if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) {
-        return
-    } (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with actual channel id: 1135557183845711983
+    if (!guild) throw new Error('Guild not found');
+
+    (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with actual channel id: 1135557183845711983
     console.log('Button sent to the channel.');
 };
 // this is only used to send the button once. This should only ever be used once, to get button into channel
-const name = new cron.CronJob('0 * * * * *', sendTestButton);
-//name.start();
+const butt = new cron.CronJob('0 * * * * *', sendTestButton);
+//butt.start();
+
+const sendTestReminder = async () => {
+    try {
+        const guildId = process.env.GUILD_ID;
+        if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
+        const guild: Guild | undefined = client.guilds.cache.get(guildId);
+        if (!guild) throw new Error('Guild not found');
+
+        const verifiedRole: Role | undefined = guild.roles.cache.get('1153647196449820755');
+        if (!verifiedRole) throw new Error('Verified role not found');
+
+        const users = await db.db('contrabot').collection('users').find({}).toArray();
+        if (!users || users.length === 0) return;
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        for (const user of users) {
+            const userID = user.userId;
+            const member = await guild.members.fetch(userID);
+            if (!member) continue;
+
+            const joinDate = member.joinedAt;
+            if (!joinDate) continue;
+
+            if (
+                !member.roles.cache.has(verifiedRole.id) &&
+                joinDate <= oneWeekAgo &&
+                !user.reminderSent
+            ) {
+                // Send the test reminder to the member
+                await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
+                await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how to basics.");
+
+                await db.db('contrabot').collection('userContext').updateOne(
+                    { userId: userID },
+                    { $set: { reminderSent: true } }
+                );
+            }
+        }
+        console.log('Test reminders sent successfully.');
+    } catch (error) {
+        console.error('Error sending test reminders:', error);
+    }
+};
+
+// Schedule the function to run every day
+const dailyJob = new cron.CronJob('0 0 0 * * *', sendTestReminder);
+dailyJob.start();
 
 export const sendQuestion = async (interaction: any) => {
 
