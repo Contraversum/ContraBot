@@ -79,6 +79,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 },
                 { upsert: true }
             );
+        } else if (buttonId === 'start_test') {
+            await interaction.deferUpdate();
+            sendQuestion(interaction);
         } else {
             // Fetch user's context from the database
             const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });

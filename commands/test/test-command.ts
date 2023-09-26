@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
 import cron from 'cron';
 import 'dotenv/config'
@@ -92,6 +92,32 @@ const checkForFeedbackRequests = async () => {
 const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks for Feedback every hour
 job.start();
 
+// Create a function to send the button
+const sendTestButton = async () => {
+    console.log('Attempting to send the button.');
+    // Create the button and action row
+    const button = new ButtonBuilder()
+        .setCustomId('start_test')
+        .setLabel('Start Test')
+        .setStyle(ButtonStyle.Danger);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(button);
+
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+        console.error('GUILD_ID is not defined in .env');
+        return;
+    }
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return
+    } (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with actual channel id: 1135557183845711983
+    console.log('Button sent to the channel.');
+};
+// this is only used to send the button once. This should only ever be used once, to get button into channel
+const name = new cron.CronJob('0 * * * * *', sendTestButton);
+//name.start();
 
 export const sendQuestion = async (interaction: any) => {
 
