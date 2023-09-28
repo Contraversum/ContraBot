@@ -93,7 +93,7 @@ const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks
 job.start();
 
 // Create a function to send the button
-const sendTestButton = async () => {
+export const sendTestButton = async () => {
     console.log('Attempting to send the button.');
     // Create the button and action row
     const button = new ButtonBuilder()
@@ -110,12 +110,10 @@ const sendTestButton = async () => {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with actual channel id: 1135557183845711983
+    (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with channel id on actual server: 1135557183845711983
     console.log('Button sent to the channel.');
 };
-// this is only used to send the button once. This should only ever be used once, to get button into channel
-const butt = new cron.CronJob('0 * * * * *', sendTestButton);
-//butt.start();
+
 
 const sendTestReminder = async () => {
     try {
@@ -127,44 +125,45 @@ const sendTestReminder = async () => {
 
         const verifiedRole: Role | undefined = guild.roles.cache.get('1153647196449820755');
         if (!verifiedRole) throw new Error('Verified role not found');
+        console.log('before members')
 
-        const users = await db.db('contrabot').collection('users').find({}).toArray();
-        if (!users || users.length === 0) return;
+        const members = await guild.members.fetch().catch(console.error);
+        if (!members) throw new Error('Verified role not found');
 
+        console.log('after members')
         const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 1);
 
-        for (const user of users) {
-            const userID = user.userId;
-            const member = await guild.members.fetch(userID);
-            if (!member) continue;
-
+        for (const [userID, member] of members) {
             const joinDate = member.joinedAt;
             if (!joinDate) continue;
+
+            const user = await db.db('contrabot').collection('users').findOne({ userId: userID });
 
             if (
                 !member.roles.cache.has(verifiedRole.id) &&
                 joinDate <= oneWeekAgo &&
-                !user.reminderSent
+                !user?.reminderSent
             ) {
                 // Send the test reminder to the member
                 await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
                 await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how to basics.");
 
+                // Update user reminderSent status in  database 
                 await db.db('contrabot').collection('userContext').updateOne(
                     { userId: userID },
                     { $set: { reminderSent: true } }
                 );
             }
         }
-        console.log('Test reminders sent successfully.');
+        console.log('code workds')
     } catch (error) {
         console.error('Error sending test reminders:', error);
     }
 };
 
 // Schedule the function to run every day
-const dailyJob = new cron.CronJob('0 0 0 * * *', sendTestReminder);
+const dailyJob = new cron.CronJob('0 * * * * *', sendTestReminder);
 dailyJob.start();
 
 export const sendQuestion = async (interaction: any) => {

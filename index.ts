@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Events } from 'discord.js';
-import { sendQuestion } from './commands/test/test-command';
+import { sendQuestion, sendTestButton } from './commands/test/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
 import * as fs from 'fs';
 import path from 'path'
@@ -12,6 +12,10 @@ client.on(Events.ClientReady, async (c) => {
     await db.connect();
 });
 client.login(process.env.TOKEN); // Log in to the bot
+
+client.on("ready", () => {
+    sendTestButton()
+});
 
 // Load commands
 const foldersPath = path.join(__dirname, 'commands');
