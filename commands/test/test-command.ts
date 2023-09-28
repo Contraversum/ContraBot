@@ -197,15 +197,22 @@ export const sendQuestion = async (interaction: any) => {
             });
 
             await textChannel.permissionOverwrites.edit(member, {
-                ViewChannel: true, // View Channel
-                SendMessages: true, // Send Messages
+                ViewChannel: true,
+                SendMessages: true,
             });
             await textChannel.permissionOverwrites.edit(bestMember, {
-                ViewChannel: true, //View Channel
-                SendMessages: true, //Send Messages
+                ViewChannel: true,
+                SendMessages: true,
+            });
+            const everyone = await guild.roles.everyone;
+
+            await textChannel.permissionOverwrites.edit(everyone, {
+                ViewChannel: false,
             });
 
-            console.log("matchMember: " + bestMember)
+            await textChannel.send({
+                content: `Hallo @${member}, Hallo @${bestMember}, ihr zwei seid ein Match! Viel Spaß beim Chatten!`
+            });
         }
         else {
             console.warn('No best match found');
