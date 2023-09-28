@@ -7,7 +7,7 @@ const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
-    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },/*
+    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
     { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
@@ -41,7 +41,7 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
 ];
 
 const checkForFeedbackRequests = async () => {
@@ -210,9 +210,13 @@ export const sendQuestion = async (interaction: any) => {
                 ViewChannel: false,
             });
 
-            await textChannel.send({
-                content: `Hallo @${member}, Hallo @${bestMember}, ihr zwei seid ein Match! Viel Spaß beim Chatten!`
-            });
+            await textChannel.send(`Hallo ${member} 👋, hallo ${bestMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+            await textChannel.send(`Bei diesen drei Fragen seid ihr nicht einer Meinung: `);
+
+            const bestMatchUser = await client.users.fetch(bestMatch.userId);
+
+            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses, bestMatchUser);
+
         }
         else {
             console.warn('No best match found');
@@ -238,7 +242,7 @@ export const sendQuestion = async (interaction: any) => {
 
 
 
-async function conversationStarter(interaction: any, bestMatch: number[], user: number[], bestMatchUser: User) {
+async function conversationStarter(whereToSend: any, interaction: any, bestMatch: number[], user: number[], bestMatchUser: User) {
 
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
@@ -262,19 +266,16 @@ async function conversationStarter(interaction: any, bestMatch: number[], user: 
     }
 
     const selectedIndexes = getRandomDisagreement(disagree, 6);
-    sendDisagreedQuestions(interaction.user, selectedIndexes.slice(0, 3));
-    if (bestMatchUser) {
-        sendDisagreedQuestions(bestMatchUser, selectedIndexes.slice(-3))
-    }
+    sendDisagreedQuestions(whereToSend, selectedIndexes.slice(0, 3));
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
     return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
 }
 
-function sendDisagreedQuestions(user: User, disagree: number[]) {
+function sendDisagreedQuestions(whereToSend : any, disagree: number[]) {
     disagree.forEach((value) => {
-        user.send({
+        whereToSend.send({
             embeds: [
                 new EmbedBuilder()
                     .setTitle(`Frage: ${value + 1}/38`)
@@ -291,7 +292,7 @@ function sendDisagreedQuestions(user: User, disagree: number[]) {
         .slice(0, 3);
 
     const topicsMessage = `Als Gesprächsthemen können z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
-    user.send(topicsMessage);
+    whereToSend.send(topicsMessage);
 }
 
 
