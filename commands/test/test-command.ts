@@ -7,7 +7,7 @@ const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
-    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
+    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },/*
     { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
@@ -41,7 +41,7 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
 ];
 
 const checkForFeedbackRequests = async () => {
@@ -156,31 +156,56 @@ export const sendQuestion = async (interaction: any) => {
 
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
+        console.log(bestMatch);
+        console.log(bestMatch?.userId);
 
-        if (bestMatch) {    
-            const matchesCategory = interaction.guild.channels.cache.find((category:any) => category.name === 'matches' && category.type === 4);
-            if (!matchesCategory) {
-                console.error('Die Kategorie "matches" wurde nicht gefunden.');
+        if (bestMatch) {
+            const guildId = process.env.GUILD_ID;
+            if (!guildId) {
+                console.error('GUILD_ID is not defined in .env');
+                return;
+            }
+            const guild: Guild | undefined = client.guilds.cache.get(guildId);
+            if (!guild) {
+                console.error('Guild not found');
                 return;
             }
 
+            const member = guild.members.cache.get(interaction.user.id);
+            if (!member) {
+                console.error('Member not found');
+                return;
+            }
+            const bestId = bestMatch.userId
+            console.log(bestId);
+
+            const bestMember = await guild.members.fetch(bestId);
+            if (!bestMember) {
+                console.error('bestMember not found');
+                return;
+            }
+
+            const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
+
             const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
             console.log("current channel name: " + channelName)
-            
-            const textChannel = await interaction.guild.channels.create({
+
+            const textChannel = await guild.channels.create({
+                parent: matchesCategory?.id,
                 name: channelName.toLowerCase(),
                 type: 0,
-                parent: matchesCategory,
             });
 
-            await textChannel.permissionOverwrites.edit(interaction.user.id, {
-                0x0000000000000400: true, //View Channel
-                0x0000000000000800: true, //Send Messages
+            await textChannel.permissionOverwrites.edit(member, {
+                ViewChannel: true, // View Channel
+                SendMessages: true, // Send Messages
+            });
+            await textChannel.permissionOverwrites.edit(bestMember, {
+                ViewChannel: true, //View Channel
+                SendMessages: true, //Send Messages
             });
 
-            const guild = interaction.guild;
-            const matchMember = guild.members.cache.get(bestMatch.userId);
-            console.log("matchMember: " + matchMember)
+            console.log("matchMember: " + bestMember)
         }
         else {
             console.warn('No best match found');
