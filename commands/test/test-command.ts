@@ -92,10 +92,8 @@ const checkForFeedbackRequests = async () => {
 const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks for Feedback every hour
 job.start();
 
-// Create a function to send the button
+
 export const sendTestButton = async () => {
-    console.log('Attempting to send the button.');
-    // Create the button and action row
     const button = new ButtonBuilder()
         .setCustomId('start_test')
         .setLabel('Start Test')
@@ -110,8 +108,7 @@ export const sendTestButton = async () => {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1119231778209681450") as TextChannel).send({ components: [actionRow] }); //replace with channel id on actual server: 1135557183845711983
-    console.log('Button sent to the channel.');
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] });
 };
 
 
@@ -123,14 +120,12 @@ const sendTestReminder = async () => {
         const guild: Guild | undefined = client.guilds.cache.get(guildId);
         if (!guild) throw new Error('Guild not found');
 
-        const verifiedRole: Role | undefined = guild.roles.cache.get('1153647196449820755');
+        const verifiedRole: Role | undefined = guild.roles.cache.get('1143590879274213486');
         if (!verifiedRole) throw new Error('Verified role not found');
-        console.log('before members')
 
         const members = await guild.members.fetch().catch(console.error);
         if (!members) throw new Error('Verified role not found');
 
-        console.log('after members')
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 1);
 
@@ -150,20 +145,23 @@ const sendTestReminder = async () => {
                 await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how to basics.");
 
                 // Update user reminderSent status in  database 
-                await db.db('contrabot').collection('userContext').updateOne(
+                await db.db('contrabot').collection('users').updateOne(
                     { userId: userID },
-                    { $set: { reminderSent: true } }
+                    {
+                        $set:
+                            { reminderSent: true }
+                    },
+                    { upsert: true }
                 );
             }
         }
-        console.log('code workds')
     } catch (error) {
         console.error('Error sending test reminders:', error);
     }
 };
 
 // Schedule the function to run every day
-const dailyJob = new cron.CronJob('0 * * * * *', sendTestReminder);
+const dailyJob = new cron.CronJob('0 0 0 * * *', sendTestReminder);
 dailyJob.start();
 
 export const sendQuestion = async (interaction: any) => {
@@ -375,26 +373,17 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 
 function verifyUser(interaction: any) {
     const guildId = process.env.GUILD_ID;
-    if (!guildId) {
-        console.error('GUILD_ID is not defined in .env');
-        return;
-    }
+    if (!guildId) throw new Error('GuildId not found');
+
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) {
-        console.error('Guild not found');
-        return;
-    }
+    if (!guild) throw new Error('Guild not found');
 
     const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
-    if (!role) {
-        console.error('Role not found');
-        return;
-    }
+    if (!role) throw new Error('Role not found');
+
     const member = guild.members.cache.get(interaction.user.id);
-    if (!member) {
-        console.error('Member not found');
-        return;
-    }
+    if (!member) throw new Error('Member not found');
+
     member.roles.add(role).catch(console.error);
 }
 
