@@ -157,18 +157,30 @@ export const sendQuestion = async (interaction: any) => {
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
 
-        if (bestMatch) {
-            interaction.user.send(`Dein bester Gesprächspartner ist: **@${bestMatch.username}**.`);
-            interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum-Server klickst 👆 und ihm eine Nachricht sendest.");
-            interaction.user.send("Dies sind drei Fragen bei denen ihr euch unterscheidet:");
-
-            // Send the best match that they have been matched with the user
-            const bestMatchUser = await client.users.fetch(bestMatch.userId);
-            if (bestMatchUser) {
-                bestMatchUser.send(`Hey 👋, du wurdest mit: **@${interaction.user.username}** gematched.`);
-                bestMatchUser.send("Ihr habt euch bei diesen drei Fragen beispielsweise unterschieden:");
+        if (bestMatch) {    
+            const matchesCategory = interaction.guild.channels.cache.find((category:any) => category.name === 'matches' && category.type === 4);
+            if (!matchesCategory) {
+                console.error('Die Kategorie "matches" wurde nicht gefunden.');
+                return;
             }
-            conversationStarter(interaction, bestMatch.userVector, userResponses, bestMatchUser)
+
+            const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
+            console.log("current channel name: " + channelName)
+            
+            const textChannel = await interaction.guild.channels.create({
+                name: channelName.toLowerCase(),
+                type: 0,
+                parent: matchesCategory,
+            });
+
+            await textChannel.permissionOverwrites.edit(interaction.user.id, {
+                0x0000000000000400: true, //View Channel
+                0x0000000000000800: true, //Send Messages
+            });
+
+            const guild = interaction.guild;
+            const matchMember = guild.members.cache.get(bestMatch.userId);
+            console.log("matchMember: " + matchMember)
         }
         else {
             console.warn('No best match found');
