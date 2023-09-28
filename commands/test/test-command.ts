@@ -127,7 +127,7 @@ const sendTestReminder = async () => {
         if (!members) throw new Error('Verified role not found');
 
         const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 1);
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
         for (const [userID, member] of members) {
             const joinDate = member.joinedAt;
