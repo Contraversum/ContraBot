@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
 import cron from 'cron';
 import 'dotenv/config'
@@ -92,6 +92,78 @@ const checkForFeedbackRequests = async () => {
 const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks for Feedback every hour
 job.start();
 
+
+export const sendTestButton = async () => {
+    const button = new ButtonBuilder()
+        .setCustomId('start_test')
+        .setLabel('Start Test')
+        .setStyle(ButtonStyle.Danger);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(button);
+
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    if (!guild) throw new Error('Guild not found');
+
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
+};
+
+
+
+const sendTestReminder = async () => {
+    try {
+        const guildId = process.env.GUILD_ID;
+        if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
+        const guild: Guild | undefined = client.guilds.cache.get(guildId);
+        if (!guild) throw new Error('Guild not found');
+
+        const verifiedRole: Role | undefined = guild.roles.cache.get('1143590879274213486');
+        if (!verifiedRole) throw new Error('Verified role not found');
+
+        const members = await guild.members.fetch().catch(console.error);
+        if (!members) throw new Error('Verified role not found');
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        for (const [userID, member] of members) {
+            const joinDate = member.joinedAt;
+            if (!joinDate) continue;
+
+            const user = await db.db('contrabot').collection('users').findOne({ userId: userID });
+
+            if (
+                !member.roles.cache.has(verifiedRole.id) &&
+                joinDate <= oneWeekAgo &&
+                !user?.reminderSent
+            ) {
+                // Send the test reminder to the member
+                await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
+                await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how-to-basics.");
+
+                // Add the user to the database and creates reminderSent status 
+                await db.db('contrabot').collection('users').updateOne(
+                    { userId: userID },
+                    {
+                        $set:
+                            { reminderSent: true }
+                    },
+                    { upsert: true }
+                );
+            }
+        }
+    } catch (error) {
+        console.error('Error sending test reminders:', error);
+    }
+};
+
+// Schedule the function to run every day
+const dailyJob = new cron.CronJob('0 0 0 * * *', sendTestReminder);
+dailyJob.start();
 
 export const sendQuestion = async (interaction: any) => {
 
@@ -302,26 +374,17 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
 
 function verifyUser(interaction: any) {
     const guildId = process.env.GUILD_ID;
-    if (!guildId) {
-        console.error('GUILD_ID is not defined in .env');
-        return;
-    }
+    if (!guildId) throw new Error('GuildId not found');
+
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) {
-        console.error('Guild not found');
-        return;
-    }
+    if (!guild) throw new Error('Guild not found');
 
     const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
-    if (!role) {
-        console.error('Role not found');
-        return;
-    }
+    if (!role) throw new Error('Role not found');
+
     const member = guild.members.cache.get(interaction.user.id);
-    if (!member) {
-        console.error('Member not found');
-        return;
-    }
+    if (!member) throw new Error('Member not found');
+
     member.roles.add(role).catch(console.error);
 }
 

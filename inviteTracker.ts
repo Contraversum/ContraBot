@@ -58,9 +58,11 @@ async function trackInvites() {
 
 async function assignRoles(inviteCount: number, userId: string, guild: Guild) {
     const rolesToAssign = [
-        { role: '1153789870582550598', minInviteCount: 1, maxInviteCount: 2 },
-        { role: '1153796740072349726', minInviteCount: 3, maxInviteCount: 10 },
-        { role: '1153992358212423730', minInviteCount: 11, maxInviteCount: Infinity },
+        { role: '1151603003279802498', minInviteCount: 1, maxInviteCount: 2 }, // Invite Duke
+        { role: '1151555451910115411', minInviteCount: 3, maxInviteCount: 6 }, // Invite Prince
+        { role: '1151555734652342372', minInviteCount: 7, maxInviteCount: 19 }, // Invite King
+        { role: '1151555885672443906', minInviteCount: 20, maxInviteCount: 49 }, // Invite Emperor
+        { role: '1151555968140841012', minInviteCount: 50, maxInviteCount: Infinity }, // Invite God
     ];
     const rolesToRemove: Collection<string, Role> = new Collection();
 
