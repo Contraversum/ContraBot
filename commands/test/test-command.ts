@@ -108,8 +108,9 @@ export const sendTestButton = async () => {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] });
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
 };
+
 
 
 const sendTestReminder = async () => {
@@ -142,9 +143,9 @@ const sendTestReminder = async () => {
             ) {
                 // Send the test reminder to the member
                 await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
-                await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how to basics.");
+                await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how-to-basics.");
 
-                // Update user reminderSent status in  database 
+                // Add the user to the database and creates reminderSent status 
                 await db.db('contrabot').collection('users').updateOne(
                     { userId: userID },
                     {
