@@ -212,9 +212,9 @@ export const sendQuestion = async (interaction: any) => {
             await textChannel.send(`Hallo ${member} 👋, hallo ${bestMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
             await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr  nicht einer Meinung:`);
 
-            const bestMatchUser = await client.users.fetch(bestMatch.userId);
 
-            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses, bestMatchUser);
+
+            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
 
         }
         else {
@@ -241,7 +241,7 @@ export const sendQuestion = async (interaction: any) => {
 
 
 
-async function conversationStarter(whereToSend: any, interaction: any, bestMatch: number[], user: number[], bestMatchUser: User) {
+async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
 
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
@@ -265,16 +265,16 @@ async function conversationStarter(whereToSend: any, interaction: any, bestMatch
     }
 
     const selectedIndexes = getRandomDisagreement(disagree, 6);
-    sendDisagreedQuestions(whereToSend, selectedIndexes.slice(0, 3));
+    sendDisagreedQuestions(channelOfDestination, selectedIndexes.slice(0, 3));
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
     return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
 }
 
-function sendDisagreedQuestions(whereToSend : any, disagree: number[]) {
+function sendDisagreedQuestions(channelOfDestination : any, disagree: number[]) {
     disagree.forEach((value) => {
-        whereToSend.send({
+        channelOfDestination.send({
             embeds: [
                 new EmbedBuilder()
                     .setTitle(`Frage: ${value + 1}/38`)
@@ -291,7 +291,7 @@ function sendDisagreedQuestions(whereToSend : any, disagree: number[]) {
         .slice(0, 3);
 
     const topicsMessage = `Als Gesprächsthemen können z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
-    whereToSend.send(topicsMessage);
+    channelOfDestination.send(topicsMessage);
 }
 
 
