@@ -7,7 +7,7 @@ const questions = [
     { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
-    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
+    /*{ question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
     { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
@@ -41,7 +41,7 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
 ];
 
 const checkForFeedbackRequests = async () => {
@@ -156,13 +156,13 @@ export const sendQuestion = async (interaction: any) => {
 
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
-        console.log(bestMatch);
-        console.log(bestMatch?.userId);
+       
+
 
         if (bestMatch) {
             const guildId = process.env.GUILD_ID;
             if (!guildId) {
-                console.error('GUILD_ID is not defined in .env');
+                console.error('GUILD_ID is not found');
                 return;
             }
             const guild: Guild | undefined = client.guilds.cache.get(guildId);
@@ -176,10 +176,10 @@ export const sendQuestion = async (interaction: any) => {
                 console.error('Member not found');
                 return;
             }
-            const bestId = bestMatch.userId
-            console.log(bestId);
+           
+           
 
-            const bestMember = await guild.members.fetch(bestId);
+            const bestMember = await guild.members.fetch(bestMatch.userId);
             if (!bestMember) {
                 console.error('bestMember not found');
                 return;
@@ -188,7 +188,6 @@ export const sendQuestion = async (interaction: any) => {
             const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
 
             const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
-            console.log("current channel name: " + channelName)
 
             const textChannel = await guild.channels.create({
                 parent: matchesCategory?.id,
@@ -211,7 +210,7 @@ export const sendQuestion = async (interaction: any) => {
             });
 
             await textChannel.send(`Hallo ${member} 👋, hallo ${bestMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
-            await textChannel.send(`Bei diesen drei Fragen seid ihr nicht einer Meinung: `);
+            await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr  nicht einer Meinung:`);
 
             const bestMatchUser = await client.users.fetch(bestMatch.userId);
 
