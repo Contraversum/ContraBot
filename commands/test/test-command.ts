@@ -153,12 +153,8 @@ export const sendQuestion = async (interaction: any) => {
         console.log(userResponses);
         console.log(interaction.user.id);
 
-
-
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
        
-
-
         if (bestMatch) {
             const guildId = process.env.GUILD_ID;
             if (!guildId) {
@@ -176,12 +172,10 @@ export const sendQuestion = async (interaction: any) => {
                 console.error('Member not found');
                 return;
             }
-           
-           
 
-            const bestMember = await guild.members.fetch(bestMatch.userId);
-            if (!bestMember) {
-                console.error('bestMember not found');
+            bestMatch.memberId = await guild.members.fetch(bestMatch.userId);
+            if (!bestMatch.memberId) {
+                console.error('GuildMembership of BestMatch not found');
                 return;
             }
 
@@ -199,23 +193,22 @@ export const sendQuestion = async (interaction: any) => {
                 ViewChannel: true,
                 SendMessages: true,
             });
-            await textChannel.permissionOverwrites.edit(bestMember, {
+            await textChannel.permissionOverwrites.edit(bestMatch.memberId, {
                 ViewChannel: true,
                 SendMessages: true,
             });
+
             const everyone = await guild.roles.everyone;
 
             await textChannel.permissionOverwrites.edit(everyone, {
                 ViewChannel: false,
             });
 
-            await textChannel.send(`Hallo ${member} 👋, hallo ${bestMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+            await textChannel.send(`Hallo ${member} 👋, hallo ${bestMatch.memberId} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
             await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr  nicht einer Meinung:`);
-
-
-
             conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
 
+            interaction.user.send(`Du wurdest erfolgreich mit @${bestMatch.username} gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen!`);
         }
         else {
             console.warn('No best match found');
@@ -294,9 +287,7 @@ function sendDisagreedQuestions(channelOfDestination : any, disagree: number[]) 
     channelOfDestination.send(topicsMessage);
 }
 
-
-
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[] } | null> {
+async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], memberId: any} | null> {
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -310,7 +301,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             return null;
         }
 
-        let mostOppositeUser: { userId: string, username: string, userVector: number[] } | null = null;
+        let mostOppositeUser: { userId: string, username: string, userVector: number[], memberId: any } | null = null;
         let lowestDifferenceScore = Infinity;  // Initialize to a high value
 
         for (const user of users) {
@@ -333,7 +324,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             // Update the most opposite user if the difference score is lower than the lowest seen so far
             if (differenceScore < lowestDifferenceScore) {
                 lowestDifferenceScore = differenceScore;
-                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector };
+                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, memberId: null };
             }
         }
 
