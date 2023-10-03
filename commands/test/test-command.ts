@@ -8,7 +8,7 @@ const questions = [
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
-    { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
+    /*{ question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
     { question: 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.', tag: 'Sozialpolitik' },
@@ -41,7 +41,7 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
 ];
 
 const checkForFeedbackRequests = async () => {
@@ -131,6 +131,7 @@ export const sendQuestion = async (interaction: any) => {
             components: [builder]
         });
 
+        
         // Update context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -138,6 +139,7 @@ export const sendQuestion = async (interaction: any) => {
                 $set: {
                     userId: interaction.user.id,
                     username: interaction.user.username,
+
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
                     feedbackRequestSent: false,
@@ -151,11 +153,12 @@ export const sendQuestion = async (interaction: any) => {
         );
     } else {
         console.log(userResponses);
-        console.log(interaction.user.id);
+        console.log("ID of the interaction user: "+interaction.user.id);
 
         const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
        
         if (bestMatch) {
+            
             const guildId = process.env.GUILD_ID;
             if (!guildId) {
                 console.error('GUILD_ID is not found');
@@ -166,15 +169,13 @@ export const sendQuestion = async (interaction: any) => {
                 console.error('Guild not found');
                 return;
             }
-
-            const member = guild.members.cache.get(interaction.user.id);
-            if (!member) {
-                console.error('Member not found');
+            const interactionGuildMember = guild.members.cache.get(interaction.user.id);
+            if (!interactionGuildMember) {
+                console.error('interactionGuildMember not found');
                 return;
             }
-
-            bestMatch.memberId = await guild.members.fetch(bestMatch.userId);
-            if (!bestMatch.memberId) {
+            bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
+            if (!bestMatch.GuildMember) {
                 console.error('GuildMembership of BestMatch not found');
                 return;
             }
@@ -189,11 +190,11 @@ export const sendQuestion = async (interaction: any) => {
                 type: 0,
             });
 
-            await textChannel.permissionOverwrites.edit(member, {
+            await textChannel.permissionOverwrites.edit(interactionGuildMember, {
                 ViewChannel: true,
                 SendMessages: true,
             });
-            await textChannel.permissionOverwrites.edit(bestMatch.memberId, {
+            await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
                 ViewChannel: true,
                 SendMessages: true,
             });
@@ -204,11 +205,13 @@ export const sendQuestion = async (interaction: any) => {
                 ViewChannel: false,
             });
 
-            await textChannel.send(`Hallo ${member} 👋, hallo ${bestMatch.memberId} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+           // await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
             await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr  nicht einer Meinung:`);
             conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
 
             interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+
+            console.log(bestMatch.GuildMember)
         }
         else {
             console.warn('No best match found');
@@ -287,7 +290,7 @@ function sendDisagreedQuestions(channelOfDestination : any, disagree: number[]) 
     channelOfDestination.send(topicsMessage);
 }
 
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], memberId: any} | null> {
+async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any} | null> {
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -301,7 +304,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             return null;
         }
 
-        let mostOppositeUser: { userId: string, username: string, userVector: number[], memberId: any } | null = null;
+        let mostOppositeUser: { userId: string, username: string, userVector: number[], GuildMember: any } | null = null;
         let lowestDifferenceScore = Infinity;  // Initialize to a high value
 
         for (const user of users) {
@@ -324,7 +327,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             // Update the most opposite user if the difference score is lower than the lowest seen so far
             if (differenceScore < lowestDifferenceScore) {
                 lowestDifferenceScore = differenceScore;
-                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, memberId: null };
+                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, GuildMember: null };
             }
         }
 
@@ -352,12 +355,12 @@ function verifyUser(interaction: any) {
         console.error('Role not found');
         return;
     }
-    const member = guild.members.cache.get(interaction.user.id);
-    if (!member) {
-        console.error('Member not found');
+    const interactionGuildMember = guild.members.cache.get(interaction.user.id);
+    if (!interactionGuildMember) {
+        console.error('interactionGuildMember not found');
         return;
     }
-    member.roles.add(role).catch(console.error);
+    interactionGuildMember.roles.add(role).catch(console.error);
 }
 
 export const data = new SlashCommandBuilder().setName('test').setDescription('Asks the test questions!');
