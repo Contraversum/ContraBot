@@ -152,15 +152,14 @@ export const sendQuestion = async (interaction: any) => {
             { upsert: true }
         );
     } else {
-        const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
+        const guildId = process.env.GUILD_ID;
+        if (!guildId) throw new Error('GUILD_ID not found');
+
+        const guild: Guild | undefined = client.guilds.cache.get(guildId);
+        if (!guild) throw new Error('Guild not found');
+
+        const bestMatch = await findMatchingUser(interaction.user.id, userResponses, guild);
         if (bestMatch) {
-
-            const guildId = process.env.GUILD_ID;
-            if (!guildId) throw new Error('GUILD_ID not found');
-
-            const guild: Guild | undefined = client.guilds.cache.get(guildId);
-            if (!guild) throw new Error('Guild not found');
-
             const interactionGuildMember = guild.members.cache.get(interaction.user.id);
             if (!interactionGuildMember) throw new Error('interactionGuildMember was nog found');
 
@@ -198,7 +197,7 @@ export const sendQuestion = async (interaction: any) => {
 
             interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
 
-            verifyUser(interaction);
+            verifyUser(interaction, guild);
 
         }
         else {
@@ -271,12 +270,7 @@ function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
     channelOfDestination.send(topicsMessage);
 }
 
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
-    const guildId = process.env.GUILD_ID;
-    if (!guildId) throw new Error('GUILD_ID not found');
-
-    const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) throw new Error('Guild not found');
+async function findMatchingUser(userId: string, userResponses: number[], guild: Guild): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
 
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
@@ -305,14 +299,6 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
                 continue;
             }
 
-            const isMember = await guild.members.fetch(user.userId).then(() => true).catch(() => false);
-
-            if (!isMember) {
-                await db.db('contrabot').collection("users").deleteOne({ userId: user.userId });
-                console.log(`Deleted: userId ${user.userId} is no longer on the server.`);
-                continue; // Skip to the next user
-            }
-
             const differenceScore = userResponses.reduce((acc, value, index) => {
                 return acc + value * user.userVector[index];
             }, 0);
@@ -323,36 +309,30 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             }
         }
 
-        // If no valid user is found by the end of the loop, the function will return null.
+        if (mostOppositeUser) {
+            const isMember = await guild.members.fetch(mostOppositeUser.userId).then(() => true).catch(() => false);
+            if (!isMember) {
+                await db.db('contrabot').collection("users").deleteOne({ userId: mostOppositeUser.userId });
+                console.log(`Deleted: userId ${mostOppositeUser.userId} is no longer on the server.`);
+                return await findMatchingUser(userId, userResponses, guild); // Recursive call if the best match isn't a server member
+            }
+        }
+
         return mostOppositeUser || null;
+
     } catch (error) {
         console.error("Error in findMatchingUser: ", error);
         return null;
     }
 }
 
-function verifyUser(interaction: any) {
-    const guildId = process.env.GUILD_ID;
-    if (!guildId) {
-        console.error('GUILD_ID is not defined in .env');
-        return;
-    }
-    const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) {
-        console.error('Guild not found');
-        return;
-    }
+function verifyUser(interaction: any, guild: Guild) {
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
+    if (!role) throw new Error('Role not found');
 
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
-    if (!role) {
-        console.error('Role not found');
-        return;
-    }
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
-    if (!interactionGuildMember) {
-        console.error('interactionGuildMember not found');
-        return;
-    }
+    if (!interactionGuildMember) throw new Error('Guild not found');
+
     interactionGuildMember.roles.add(role).catch(console.error);
 }
 
