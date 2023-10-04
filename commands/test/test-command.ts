@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
 import cron from 'cron';
 import 'dotenv/config'
@@ -93,6 +93,78 @@ const job = new cron.CronJob('0 0 * * * *', checkForFeedbackRequests); // checks
 job.start();
 
 
+export const sendTestButton = async () => {
+    const button = new ButtonBuilder()
+        .setCustomId('start_test')
+        .setLabel('Start Test')
+        .setStyle(ButtonStyle.Danger);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(button);
+
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    if (!guild) throw new Error('Guild not found');
+
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
+};
+
+
+
+const sendTestReminder = async () => {
+    try {
+        const guildId = process.env.GUILD_ID;
+        if (!guildId) throw new Error('GUILD_ID is not defined in .env');
+
+        const guild: Guild | undefined = client.guilds.cache.get(guildId);
+        if (!guild) throw new Error('Guild not found');
+
+        const verifiedRole: Role | undefined = guild.roles.cache.get('1143590879274213486');
+        if (!verifiedRole) throw new Error('Verified role not found');
+
+        const members = await guild.members.fetch().catch(console.error);
+        if (!members) throw new Error('Verified role not found');
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        for (const [userID, member] of members) {
+            const joinDate = member.joinedAt;
+            if (!joinDate) continue;
+
+            const user = await db.db('contrabot').collection('users').findOne({ userId: userID });
+
+            if (
+                !member.roles.cache.has(verifiedRole.id) &&
+                joinDate <= oneWeekAgo &&
+                !user?.reminderSent
+            ) {
+                // Send the test reminder to the member
+                await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
+                await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how-to-basics.");
+
+                // Add the user to the database and creates reminderSent status 
+                await db.db('contrabot').collection('users').updateOne(
+                    { userId: userID },
+                    {
+                        $set:
+                            { reminderSent: true }
+                    },
+                    { upsert: true }
+                );
+            }
+        }
+    } catch (error) {
+        console.error('Error sending test reminders:', error);
+    }
+};
+
+// Schedule the function to run every day
+const dailyJob = new cron.CronJob('0 0 0 * * *', sendTestReminder);
+dailyJob.start();
+
 export const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
@@ -131,6 +203,7 @@ export const sendQuestion = async (interaction: any) => {
             components: [builder]
         });
 
+
         // Update context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -138,6 +211,7 @@ export const sendQuestion = async (interaction: any) => {
                 $set: {
                     userId: interaction.user.id,
                     username: interaction.user.username,
+
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
                     feedbackRequestSent: false,
@@ -150,34 +224,58 @@ export const sendQuestion = async (interaction: any) => {
             { upsert: true }
         );
     } else {
-        console.log(userResponses);
-        console.log(interaction.user.id);
+        const guildId = process.env.GUILD_ID;
+        if (!guildId) throw new Error('GUILD_ID not found');
 
+        const guild: Guild | undefined = client.guilds.cache.get(guildId);
+        if (!guild) throw new Error('Guild not found');
 
-
-        const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
-
+        const bestMatch = await findMatchingUser(interaction.user.id, userResponses, guild);
         if (bestMatch) {
-            interaction.user.send(`Dein bester Gesprächspartner ist: **@${bestMatch.username}**.`);
-            interaction.user.send("Als nächstes schreibst du deinem Partner, indem du auf seinen Namen auf dem Contraversum-Server klickst 👆 und ihm eine Nachricht sendest.");
-            interaction.user.send("Dies sind drei Fragen bei denen ihr euch unterscheidet:");
+            const interactionGuildMember = guild.members.cache.get(interaction.user.id);
+            if (!interactionGuildMember) throw new Error('interactionGuildMember was nog found');
 
-            // Send the best match that they have been matched with the user
-            const bestMatchUser = await client.users.fetch(bestMatch.userId);
-            if (bestMatchUser) {
-                bestMatchUser.send(`Hey 👋, du wurdest mit: **@${interaction.user.username}** gematched.`);
-                bestMatchUser.send("Ihr habt euch bei diesen drei Fragen beispielsweise unterschieden:");
-            }
-            conversationStarter(interaction, bestMatch.userVector, userResponses, bestMatchUser)
+            bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
+            if (!guild) throw new Error('bestMatch.GuildMember');
+
+            const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
+
+            const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
+
+            const textChannel = await guild.channels.create({
+                parent: matchesCategory?.id,
+                name: channelName.toLowerCase(),
+                type: 0,
+            });
+
+            await textChannel.permissionOverwrites.edit(interactionGuildMember, {
+                ViewChannel: true,
+                SendMessages: true,
+            });
+            await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
+                ViewChannel: true,
+                SendMessages: true,
+            });
+
+            const everyone = await guild.roles.everyone;
+
+            await textChannel.permissionOverwrites.edit(everyone, {
+                ViewChannel: false,
+            });
+
+            await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+            await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
+            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
+
+            interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+
+            verifyUser(interaction, guild);
+
         }
         else {
             console.warn('No best match found');
             interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
         }
-
-
-        verifyUser(interaction);
-
         // Reset context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -191,10 +289,7 @@ export const sendQuestion = async (interaction: any) => {
     }
 }
 
-
-
-
-async function conversationStarter(interaction: any, bestMatch: number[], user: number[], bestMatchUser: User) {
+async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
 
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
@@ -218,19 +313,16 @@ async function conversationStarter(interaction: any, bestMatch: number[], user: 
     }
 
     const selectedIndexes = getRandomDisagreement(disagree, 6);
-    sendDisagreedQuestions(interaction.user, selectedIndexes.slice(0, 3));
-    if (bestMatchUser) {
-        sendDisagreedQuestions(bestMatchUser, selectedIndexes.slice(-3))
-    }
+    sendDisagreedQuestions(channelOfDestination, selectedIndexes.slice(0, 3));
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
     return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
 }
 
-function sendDisagreedQuestions(user: User, disagree: number[]) {
+function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
     disagree.forEach((value) => {
-        user.send({
+        channelOfDestination.send({
             embeds: [
                 new EmbedBuilder()
                     .setTitle(`Frage: ${value + 1}/38`)
@@ -247,12 +339,11 @@ function sendDisagreedQuestions(user: User, disagree: number[]) {
         .slice(0, 3);
 
     const topicsMessage = `Als Gesprächsthemen können z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
-    user.send(topicsMessage);
+    channelOfDestination.send(topicsMessage);
 }
 
+async function findMatchingUser(userId: string, userResponses: number[], guild: Guild): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
 
-
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[] } | null> {
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -266,8 +357,8 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
             return null;
         }
 
-        let mostOppositeUser: { userId: string, username: string, userVector: number[] } | null = null;
-        let lowestDifferenceScore = Infinity;  // Initialize to a high value
+        let mostOppositeUser: { userId: string, username: string, userVector: number[], GuildMember: any } | null = null;
+        let lowestDifferenceScore = Infinity;
 
         for (const user of users) {
             if (user.userId === userId) {
@@ -280,49 +371,41 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
                 continue;
             }
 
-            // Calculate the difference score
             const differenceScore = userResponses.reduce((acc, value, index) => {
-                // Multiply corresponding elements and sum them up
                 return acc + value * user.userVector[index];
             }, 0);
 
-            // Update the most opposite user if the difference score is lower than the lowest seen so far
             if (differenceScore < lowestDifferenceScore) {
                 lowestDifferenceScore = differenceScore;
-                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector };
+                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, GuildMember: null };
+            }
+        }
+
+        if (mostOppositeUser) {
+            const isMember = await guild.members.fetch(mostOppositeUser.userId).then(() => true).catch(() => false);
+            if (!isMember) {
+                await db.db('contrabot').collection("users").deleteOne({ userId: mostOppositeUser.userId });
+                console.log(`Deleted: userId ${mostOppositeUser.userId} is no longer on the server.`);
+                return await findMatchingUser(userId, userResponses, guild); // Recursive call if the best match isn't a server member
             }
         }
 
         return mostOppositeUser || null;
+
     } catch (error) {
         console.error("Error in findMatchingUser: ", error);
         return null;
     }
 }
 
-function verifyUser(interaction: any) {
-    const guildId = process.env.GUILD_ID;
-    if (!guildId) {
-        console.error('GUILD_ID is not defined in .env');
-        return;
-    }
-    const guild: Guild | undefined = client.guilds.cache.get(guildId);
-    if (!guild) {
-        console.error('Guild not found');
-        return;
-    }
+function verifyUser(interaction: any, guild: Guild) {
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
+    if (!role) throw new Error('Role not found');
 
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755');
-    if (!role) {
-        console.error('Role not found');
-        return;
-    }
-    const member = guild.members.cache.get(interaction.user.id);
-    if (!member) {
-        console.error('Member not found');
-        return;
-    }
-    member.roles.add(role).catch(console.error);
+    const interactionGuildMember = guild.members.cache.get(interaction.user.id);
+    if (!interactionGuildMember) throw new Error('Guild not found');
+
+    interactionGuildMember.roles.add(role).catch(console.error);
 }
 
 export const data = new SlashCommandBuilder().setName('test').setDescription('Asks the test questions!');
