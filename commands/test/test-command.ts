@@ -8,7 +8,7 @@ const questions = [
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
-    /*{ question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
+    { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
     { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
     { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
     { question: 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.', tag: 'Sozialpolitik' },
@@ -41,7 +41,7 @@ const questions = [
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
     { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },*/
+    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
 ];
 
 const checkForFeedbackRequests = async () => {
@@ -131,7 +131,7 @@ export const sendQuestion = async (interaction: any) => {
             components: [builder]
         });
 
-        
+
         // Update context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -152,13 +152,7 @@ export const sendQuestion = async (interaction: any) => {
             { upsert: true }
         );
     } else {
-        console.log(userResponses);
-        console.log("ID of the interaction user: "+interaction.user.id);
-
-    const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
-       
-    var loopMatch = true    
-    while (loopMatch == true) { 
+        const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
         if (bestMatch) {
 
             const guildId = process.env.GUILD_ID;
@@ -170,63 +164,47 @@ export const sendQuestion = async (interaction: any) => {
             const interactionGuildMember = guild.members.cache.get(interaction.user.id);
             if (!interactionGuildMember) throw new Error('interactionGuildMember was nog found');
 
-           
-            const isMember = await guild.members.fetch(bestMatch.userId).then(() => true).catch(() => false);
-           
-            if (isMember == true) {
-                bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
-                if (!guild) throw new Error('bestMatch.GuildMember');
+            bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
+            if (!guild) throw new Error('bestMatch.GuildMember');
 
-                const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
+            const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
 
-                const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
+            const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
 
-                const textChannel = await guild.channels.create({
-                    parent: matchesCategory?.id,
-                    name: channelName.toLowerCase(),
-                    type: 0,
-                });
+            const textChannel = await guild.channels.create({
+                parent: matchesCategory?.id,
+                name: channelName.toLowerCase(),
+                type: 0,
+            });
 
-                await textChannel.permissionOverwrites.edit(interactionGuildMember, {
-                    ViewChannel: true,
-                    SendMessages: true,
-                });
-                await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
-                    ViewChannel: true,
-                    SendMessages: true,
-                });
+            await textChannel.permissionOverwrites.edit(interactionGuildMember, {
+                ViewChannel: true,
+                SendMessages: true,
+            });
+            await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
+                ViewChannel: true,
+                SendMessages: true,
+            });
 
-                const everyone = await guild.roles.everyone;
+            const everyone = await guild.roles.everyone;
 
-                await textChannel.permissionOverwrites.edit(everyone, {
-                    ViewChannel: false,
-                });
+            await textChannel.permissionOverwrites.edit(everyone, {
+                ViewChannel: false,
+            });
 
             // await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
-                await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
-                conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
+            await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
+            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
 
-                interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+            interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
 
-                loopMatch = false
-            } else {
-            console.log("A user who is not a member on the server was matched.")
-            await db.db('contrabot').collection("users").deleteOne(
-                { userId: bestMatch.userId }
-            );
-            }
-            console.log("The user has been deleted from the database.")
+            verifyUser(interaction);
 
-            await findMatchingUser(interaction.user.id, userResponses);
         }
         else {
             console.warn('No best match found');
             interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
         }
-    }
-
-        verifyUser(interaction);
-
         // Reset context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -239,9 +217,6 @@ export const sendQuestion = async (interaction: any) => {
         );
     }
 }
-
-
-
 
 async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
 
@@ -274,7 +249,7 @@ function getRandomDisagreement(arr: number[], num: number) {
     return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
 }
 
-function sendDisagreedQuestions(channelOfDestination : any, disagree: number[]) {
+function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
     disagree.forEach((value) => {
         channelOfDestination.send({
             embeds: [
@@ -296,7 +271,13 @@ function sendDisagreedQuestions(channelOfDestination : any, disagree: number[]) 
     channelOfDestination.send(topicsMessage);
 }
 
-async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any} | null> {
+async function findMatchingUser(userId: string, userResponses: number[]): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) throw new Error('GUILD_ID not found');
+
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    if (!guild) throw new Error('Guild not found');
+
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -311,7 +292,7 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
         }
 
         let mostOppositeUser: { userId: string, username: string, userVector: number[], GuildMember: any } | null = null;
-        let lowestDifferenceScore = Infinity;  // Initialize to a high value
+        let lowestDifferenceScore = Infinity;
 
         for (const user of users) {
             if (user.userId === userId) {
@@ -324,19 +305,25 @@ async function findMatchingUser(userId: string, userResponses: number[]): Promis
                 continue;
             }
 
-            // Calculate the difference score
+            const isMember = await guild.members.fetch(user.userId).then(() => true).catch(() => false);
+
+            if (!isMember) {
+                await db.db('contrabot').collection("users").deleteOne({ userId: user.userId });
+                console.log(`Deleted: userId ${user.userId} is no longer on the server.`);
+                continue; // Skip to the next user
+            }
+
             const differenceScore = userResponses.reduce((acc, value, index) => {
-                // Multiply corresponding elements and sum them up
                 return acc + value * user.userVector[index];
             }, 0);
 
-            // Update the most opposite user if the difference score is lower than the lowest seen so far
             if (differenceScore < lowestDifferenceScore) {
                 lowestDifferenceScore = differenceScore;
                 mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, GuildMember: null };
             }
         }
 
+        // If no valid user is found by the end of the loop, the function will return null.
         return mostOppositeUser || null;
     } catch (error) {
         console.error("Error in findMatchingUser: ", error);
