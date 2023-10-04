@@ -191,7 +191,7 @@ export const sendQuestion = async (interaction: any) => {
                 ViewChannel: false,
             });
 
-            // await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+            await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
             await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
             conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
 
@@ -327,7 +327,7 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
