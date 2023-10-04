@@ -155,69 +155,75 @@ export const sendQuestion = async (interaction: any) => {
         console.log(userResponses);
         console.log("ID of the interaction user: "+interaction.user.id);
 
-        const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
+    const bestMatch = await findMatchingUser(interaction.user.id, userResponses);
        
+    var loopMatch = true    
+    while (loopMatch == true) { 
         if (bestMatch) {
-            
+
             const guildId = process.env.GUILD_ID;
-            if (!guildId) {
-                console.error('GUILD_ID is not found');
-                return;
-            }
+            if (!guildId) throw new Error('GUILD_ID not found');
+
             const guild: Guild | undefined = client.guilds.cache.get(guildId);
-            if (!guild) {
-                console.error('Guild not found');
-                return;
-            }
+            if (!guild) throw new Error('Guild not found');
+
             const interactionGuildMember = guild.members.cache.get(interaction.user.id);
-            if (!interactionGuildMember) {
-                console.error('interactionGuildMember not found');
-                return;
+            if (!interactionGuildMember) throw new Error('interactionGuildMember was nog found');
+
+           
+            const isMember = await guild.members.fetch(bestMatch.userId).then(() => true).catch(() => false);
+           
+            if (isMember == true) {
+                bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
+                if (!guild) throw new Error('bestMatch.GuildMember');
+
+                const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
+
+                const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
+
+                const textChannel = await guild.channels.create({
+                    parent: matchesCategory?.id,
+                    name: channelName.toLowerCase(),
+                    type: 0,
+                });
+
+                await textChannel.permissionOverwrites.edit(interactionGuildMember, {
+                    ViewChannel: true,
+                    SendMessages: true,
+                });
+                await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
+                    ViewChannel: true,
+                    SendMessages: true,
+                });
+
+                const everyone = await guild.roles.everyone;
+
+                await textChannel.permissionOverwrites.edit(everyone, {
+                    ViewChannel: false,
+                });
+
+            // await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+                await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
+                conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
+
+                interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+
+                loopMatch = false
+            } else {
+            console.log("A user who is not a member on the server was matched.")
+            await db.db('contrabot').collection("users").deleteOne(
+                { userId: bestMatch.userId }
+            );
             }
-            bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
-            if (!bestMatch.GuildMember) {
-                console.error('GuildMembership of BestMatch not found');
-                return;
-            }
+            console.log("The user has been deleted from the database.")
 
-            const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
-
-            const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
-
-            const textChannel = await guild.channels.create({
-                parent: matchesCategory?.id,
-                name: channelName.toLowerCase(),
-                type: 0,
-            });
-
-            await textChannel.permissionOverwrites.edit(interactionGuildMember, {
-                ViewChannel: true,
-                SendMessages: true,
-            });
-            await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
-                ViewChannel: true,
-                SendMessages: true,
-            });
-
-            const everyone = await guild.roles.everyone;
-
-            await textChannel.permissionOverwrites.edit(everyone, {
-                ViewChannel: false,
-            });
-
-           // await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
-            await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr  nicht einer Meinung:`);
-            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
-
-            interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
-
-            console.log(bestMatch.GuildMember)
+            await findMatchingUser(interaction.user.id, userResponses);
         }
         else {
             console.warn('No best match found');
             interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
         }
-
+    }
 
         verifyUser(interaction);
 
