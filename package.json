@@ -7,7 +7,8 @@
         "start": "ts-node index.ts",
         "mac-start": "brew services start mongodb-community@7.0 && ts-node index.ts",
         "systemd-start": "sudo systemctl start mongod && ts-node index.ts",
-        "systemv-start": "sudo service start mongod && ts-node index.ts"
+        "systemv-start": "sudo service start mongod && ts-node index.ts",
+        "deploy-commands": "ts-node deploy-commands.ts"
     },
     "keywords": [],
     "author": "",
