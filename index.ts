@@ -13,9 +13,9 @@ client.on(Events.ClientReady, async (c) => {
 });
 client.login(process.env.TOKEN); // Log in to the bot
 
-/*client.on("ready", () => {
+client.on("ready", () => {
     sendTestButton()
-});*/
+});
 
 // Load commands
 const foldersPath = path.join(__dirname, 'commands');

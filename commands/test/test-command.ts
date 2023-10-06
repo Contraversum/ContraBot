@@ -70,7 +70,8 @@ export const sendTestButton = async () => {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
+    // (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics (main server)
+    // (guild.channels.cache.get("1159905209414332526") as TextChannel).send({ components: [actionRow] }); // Test server channel
 };
 
 
