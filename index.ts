@@ -1,8 +1,8 @@
 import 'dotenv/config'
 import { Events } from 'discord.js';
-import { sendQuestion } from './commands/test/test-command';
 import { encrypt, decrypt } from './encryptionUtils';
-import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
+import { sendQuestion, sendTestButton } from './commands/test/test-command';
+import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey';
 import * as fs from 'fs';
 import path from 'path';
 import { trackInvites } from './inviteTracker';
