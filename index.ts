@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Events } from 'discord.js';
-import { sendQuestion, sendTestButton } from './commands/test/test-command';
+import { sendQuestion, sendTestButton, specificQuestionMessage } from './commands/test/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
 import * as fs from 'fs';
 import path from 'path'
@@ -107,6 +107,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             );
 
+            specificQuestionMessage[interaction.user.id].delete();
             await interaction.deferUpdate();
             sendQuestion(interaction);
         }

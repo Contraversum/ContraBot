@@ -44,6 +44,8 @@ const questions = [
     { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
 ];
 
+const specificQuestionMessage = {} as { [key: string]: any}
+
 const checkForFeedbackRequests = async () => {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -108,7 +110,7 @@ export const sendTestButton = async () => {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
+    (guild.channels.cache.get("1159905209414332526") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics main sever: 1135557183845711983
 };
 
 
@@ -175,6 +177,7 @@ export const sendQuestion = async (interaction: any) => {
 
     if (currentQuestionIndex === 0) {
         userResponses = [];
+        interaction.user.send("Bitte beantworte die folgenden Fragen. 🤗 Du kannst auf eine Frage immer nur einmal antworten: 😉")
     }
 
     if (currentQuestionIndex < questions.length) {
@@ -198,10 +201,12 @@ export const sendQuestion = async (interaction: any) => {
                 .setEmoji("👎"),
         ]);
 
-        interaction.user.send({
+        const questionMessage = await interaction.user.send({
             embeds: [embed],
             components: [builder]
         });
+
+        specificQuestionMessage[interaction.user.id] = questionMessage;
 
 
         // Update context for this user in the database
@@ -288,6 +293,7 @@ export const sendQuestion = async (interaction: any) => {
         );
     }
 }
+
 
 async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
 
@@ -417,3 +423,4 @@ export const execute = async (interaction: any) => {
     sendQuestion(interaction);
 };
 
+export { specificQuestionMessage }
