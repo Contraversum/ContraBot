@@ -1,48 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
 import cron from 'cron';
-import 'dotenv/config'
-
-const questions = [
-    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
-    { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
-    { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
-    { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
-    { question: 'Die Möglichkeiten der Vermieterinnen und Vermieter, Wohnungsmieten zu erhöhen, sollen gesetzlich stärker begrenzt werden.', tag: ['Mietpreisbremse', 'Wohnraumkosten'] },
-    { question: 'Die Ukraine soll Mitglied der Europäischen Union werden dürfen.', tag: ['EU-Erweiterung', 'Ukraine Krieg'] },
-    { question: 'Der geplante Ausstieg aus der Kohleverstromung soll vorgezogen werden.', tag: ['Energiepolitik', 'Umweltschutz'] },
-    { question: 'Alle Erwerbstätigen sollen in der gesetzlichen Rentenversicherung versichert sein müssen.', tag: 'Sozialpolitik' },
-    { question: 'Das Recht anerkannter Flüchtlinge auf Familiennachzug soll abgeschafft werden.', tag: 'Migrationspolitik' },
-    { question: 'Auf den Umsatz, der in Deutschland mit digitalen Dienstleistungen erzielt wird, soll eine nationale Steuer erhoben werden.', tag: 'Steuerpolitik' },
-    { question: 'Die traditionelle Familie aus Vater, Mutter und Kindern soll stärker als andere Lebensgemeinschaften gefördert werden.', tag: 'Familienpolitik' },
-    { question: 'Spenden von Unternehmen an Parteien sollen weiterhin erlaubt sein.', tag: 'Parteienfinanzierung' },
-    { question: 'Migration in die Europäische Union sollte erleichtert werden.', tag: 'Migrationspolitik' },
-    { question: 'Studentinnen und Studenten sollen BAföG unabhängig vom Einkommen ihrer Eltern erhalten.', tag: 'Bildungspolitik' },
-    { question: 'In Deutschland soll es generell möglich sein, neben der deutschen eine zweite Staatsbürgerschaft zu haben.', tag: ['Staatsbürgerschaft', 'Migrationspolitik'] },
-    { question: 'Bundesbehörden sollen in ihren Veröffentlichungen unterschiedliche Geschlechtsidentitäten sprachlich berücksichtigen müssen.', tag: ['Genderpolitik', 'Minderheitenpolitik'] },
-    { question: 'Der Solidaritätszuschlag soll vollständig abgeschafft werden.', tag: ['Steuerpolitik', 'Solidaritätszuschlag'] },
-    { question: 'Das Tragen eines Kopftuchs soll Beamtinnen im Dienst generell erlaubt sein.', tag: ['Religionsfreiheit', 'Minderheitenpolitik'] },
-    { question: 'Die Zulassung von neuen Autos mit Verbrennungsmotor soll auch langfristig möglich sein.', tag: 'Klimawandel' },
-    { question: 'Der Bund soll mehr Zuständigkeiten in der Schulpolitik erhalten.', tag: 'Bildungspolitik' },
-    { question: 'Der Bund soll Projekte zur Bekämpfung des Antisemitismus stärker finanziell unterstützen.', tag: ['Antisemitismus', 'Minderheitenpolitik'] },
-    { question: 'Chinesische Firmen sollen keine Aufträge für den Ausbau der Kommunikationsinfrastruktur in Deutschland erhalten dürfen.', tag: 'Wirtschaftspolitik' },
-    { question: 'Der Staat soll weiterhin für Religionsgemeinschaften die Kirchensteuer einziehen.', tag: 'Kirchensteuer' },
-    { question: 'Der kontrollierte Verkauf von Cannabis soll generell erlaubt sein.', tag: 'Drogenpolitik' },
-    { question: 'Deutschland soll aus der Europäischen Union austreten.', tag: 'EU-Politik' },
-    { question: 'Die Landeslisten der Parteien für die Wahlen zum Deutschen Bundestag sollen abwechselnd mit Frauen und Männern besetzt werden müssen.', tag: ['Geschlechtergerechtigkeit', 'Minderheitenpolitik'] },
-    { question: 'Stationäre Behandlungen im Krankenhaus sollen weiterhin über eine Fallpauschale abgerechnet werden.', tag: 'Gesundheitspolitik' },
-    { question: 'Auf hohe Vermögen soll wieder eine Steuer erhoben werden.', tag: ['Steuerpolitik', 'Vermögenssteuer'] },
-    { question: 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.', tag: ['Datenschutz', 'Videoüberwachung'] },
-    { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienpolitik' },
-    { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Klimawandel' },
-    { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
-    { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
-    { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Wirtschaftspolitik' },
-    { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
-    { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
-    { question: 'Der Flugverkehr soll höher besteuert werden.', tag: ['Flugverkehr', 'Klimapolitik'] },
-    { question: 'Unternehmen sollen selbst entscheiden, ob sie ihren Beschäftigten das Arbeiten im Homeoffice erlauben.', tag: ['Arbeitsrecht', 'Digitalisierung'] },
-];
+import 'dotenv/config';
+import questions from '../../questions';
+import findMatchingUser from '../../functions/findMatchingUser';
+import conversationStarter from '../../functions/conversationStarter';
 
 const checkForFeedbackRequests = async () => {
     const now = new Date();
@@ -286,115 +248,6 @@ export const sendQuestion = async (interaction: any) => {
                 }
             }
         );
-    }
-}
-
-async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
-
-    // get all contrasting and similar answers
-    let addedToDisagree = false; // Track if any numbers were added to disagree
-    const disagree: number[] = [];
-
-    user.forEach((value, i) => {
-        const total = value + bestMatch[i];
-        if (value !== 0 && total === 0) {
-            disagree.push(i);
-            addedToDisagree = true;
-        }
-    });
-    // Only add to disagree if the flag is still false
-    if (!addedToDisagree || disagree.length < 6) {
-        user.forEach((value, i) => {
-            const total = value + bestMatch[i];
-            if (Math.abs(total) === 1) {
-                disagree.push(i);
-            }
-        });
-    }
-
-    const selectedIndexes = getRandomDisagreement(disagree, 6);
-    sendDisagreedQuestions(channelOfDestination, selectedIndexes.slice(0, 3));
-}
-
-function getRandomDisagreement(arr: number[], num: number) {
-    return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
-}
-
-function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
-    disagree.forEach((value) => {
-        channelOfDestination.send({
-            embeds: [
-                new EmbedBuilder()
-                    .setTitle(`Frage: ${value + 1}/38`)
-                    .setDescription(questions[value].question)
-                    .setColor('#fb2364')
-            ]
-        });
-    });
-
-    // Make it so that the tags of the questions are printed properly
-    const selectedTags = disagree
-        .map(index => questions[index].tag)
-        .filter(tag => tag)
-        .slice(0, 3);
-
-    const topicsMessage = `Als Gesprächsthemen können z.B. ${selectedTags.map(tag => `**${tag}**`).join(", ")} besprochen werden.`;
-    channelOfDestination.send(topicsMessage);
-}
-
-async function findMatchingUser(userId: string, userResponses: number[], guild: Guild): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
-
-    if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
-        console.log("Invalid input parameters");
-        return null;
-    }
-
-    try {
-        const users = await db.db('contrabot').collection("users").find({}).toArray();
-
-        if (!Array.isArray(users)) {
-            console.error("Error retrieving users from database");
-            return null;
-        }
-
-        let mostOppositeUser: { userId: string, username: string, userVector: number[], GuildMember: any } | null = null;
-        let lowestDifferenceScore = Infinity;
-
-        for (const user of users) {
-            if (user.userId === userId) {
-                console.log("Skipped: same userId as input userId");
-                continue;
-            }
-
-            if (!Array.isArray(user.userVector) || user.userVector.length === 0) {
-                console.log(`Skipped: Missing or invalid userVector for userId ${user.userId}`);
-                continue;
-            }
-
-            const differenceScore = userResponses.reduce((acc, value, index) => {
-                return acc + value * user.userVector[index];
-            }, 0);
-
-            if (differenceScore < lowestDifferenceScore) {
-                lowestDifferenceScore = differenceScore;
-                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, GuildMember: null };
-            }
-        }
-
-        if (mostOppositeUser) {
-            const isMember = await guild.members.fetch(mostOppositeUser.userId).then(() => true).catch(() => false);
-            if (!isMember) {
-                await db.db('contrabot').collection("users").deleteOne({ userId: mostOppositeUser.userId });
-                console.log(`Deleted: userId ${mostOppositeUser.userId} is no longer on the server.`);
-                return await findMatchingUser(userId, userResponses, guild); // Recursive call if the best match isn't a server member
-            }
-        }
-
-        return mostOppositeUser || null;
-
-    } catch (error) {
-        console.error("Error in findMatchingUser: ", error);
-        return null;
     }
 }
 

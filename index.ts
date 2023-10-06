@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { Events } from 'discord.js';
 import { sendQuestion, sendTestButton } from './commands/test/test-command';
-import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
+import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey';
 import * as fs from 'fs';
 import path from 'path'
 import { google } from 'googleapis';
