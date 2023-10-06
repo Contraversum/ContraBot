@@ -16,11 +16,6 @@ client.on(Events.ClientReady, async (c) => {
 });
 client.login(process.env.TOKEN); // Log in to the bot
 
-/* // Commented out because the button is being sent every hour
-client.on("ready", () => {
-    sendTestButton()
-});*/
-
 // Load commands
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
