@@ -239,6 +239,7 @@ export const sendQuestion = async (interaction: any) => {
             console.warn('No best match found');
             interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
         }
+
         // Reset context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },

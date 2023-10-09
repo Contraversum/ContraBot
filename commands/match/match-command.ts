@@ -11,9 +11,14 @@ export const sendQuestion = async (interaction: any) => {
     let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
     let userResponses = userContext?.userVector || [];
 
+    // TODO: user responses
+    // TODO: check if user has completed the test
+
     if (currentQuestionIndex === 0) {
         userResponses = [];
     }
+
+    console.log(userContext);
 
     const guildId = process.env.GUILD_ID;
     if (!guildId) throw new Error('GUILD_ID not found');
