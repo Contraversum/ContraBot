@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
+import { encrypt, decrypt } from '../../encryptionUtils';
 import cron from 'cron';
 import 'dotenv/config'
 
@@ -170,7 +171,12 @@ export const sendQuestion = async (interaction: any) => {
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
     let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
-    let userResponses = userContext?.userVector || [];
+    let userResponses;
+    if (Array.isArray(userContext?.userVector)) {
+        userResponses = userContext?.userVector || [];
+    } else {
+        userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
+    }
     var currentQuestionDisplay = currentQuestionIndex + 1
 
     if (currentQuestionIndex === 0) {
@@ -203,7 +209,7 @@ export const sendQuestion = async (interaction: any) => {
             components: [builder]
         });
 
-
+        const encryptedUserVector = encrypt(JSON.stringify(userResponses));
         // Update context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -213,7 +219,7 @@ export const sendQuestion = async (interaction: any) => {
                     username: interaction.user.username,
 
                     currentQuestionIndex: currentQuestionIndex + 1,
-                    userVector: userResponses,
+                    userVector: encryptedUserVector,
                     feedbackRequestSent: false,
                     currentFeedbackQuestionIndex: 0,
                     invited: interaction.user.invited,
