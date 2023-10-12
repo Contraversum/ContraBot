@@ -13,7 +13,7 @@ export const encrypt = (text: string): string => {
     let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
     let encrypted = cipher.update(text);
 
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    encrypted = Buffer.concat([ encrypted, cipher.final() ]);
 
     return iv.toString('hex') + ':' + encrypted.toString('hex');
 }
@@ -25,7 +25,7 @@ export const decrypt = (text: string): string => {
     let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
     let decrypted = decipher.update(encryptedText);
 
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    decrypted = Buffer.concat([ decrypted, decipher.final() ]);
 
     return decrypted.toString();
 }
