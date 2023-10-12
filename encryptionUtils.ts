@@ -19,7 +19,6 @@ export const encrypt = (text: string): string => {
 }
 
 export const decrypt = (text: string): string => {
-    console.log(typeof text, text);
     let textParts = text.split(':');
     let iv = Buffer.from(textParts.shift()!, 'hex');
     let encryptedText = Buffer.from(textParts.join(':'), 'hex');
