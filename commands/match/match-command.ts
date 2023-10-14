@@ -77,6 +77,7 @@ export const sendQuestion = async (interaction: any) => {
 
 export const data = new SlashCommandBuilder().setName('match').setDescription('Requests new match without retaking the test.');
 export const execute = async (interaction: any) => {
+    
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
     let userResponses = userContext?.userVector || [];
