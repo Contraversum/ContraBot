@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, Guild } from 'discord.js';
 import { client, db } from '../../common';
 import 'dotenv/config';
+import questions from '../../questions';
 import findMatchingUser from '../../functions/findMatchingUser';
 import conversationStarter from '../../functions/conversationStarter';
 
@@ -10,9 +11,8 @@ export const sendQuestion = async (interaction: any) => {
 
     let userResponses = userContext?.userVector || [];
 
+    // Test discussion topics
     // TODO: check if user has completed the test
-
-    console.log(userContext);
 
     const guildId = process.env.GUILD_ID;
     if (!guildId) throw new Error('GUILD_ID not found');
@@ -77,9 +77,23 @@ export const sendQuestion = async (interaction: any) => {
 
 export const data = new SlashCommandBuilder().setName('match').setDescription('Requests new match without retaking the test.');
 export const execute = async (interaction: any) => {
-    await interaction.reply({
-        content: 'Neues Match wird ermittelt. Bitte schaue in deinen Direktnachrichten nach :)',
-        ephemeral: true,
-    });
-    sendQuestion(interaction);
+    const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
+
+    let userResponses = userContext?.userVector || [];
+
+    // checks if the user has answered the test
+    // if not, an error hint is displayed
+    if (userResponses.length === questions.length) {
+        await interaction.reply({
+            content: 'Neues Match wird ermittelt. Bitte schaue in deinen Direktnachrichten nach :)',
+            ephemeral: true,
+        });
+        sendQuestion(interaction);
+    } else {
+        await interaction.reply({
+            content: 'Bitte beantworte den Meinungstest vollständig, bevor du mit Anderen gematcht werden kannst! Bitte nutze dazu den Befehl `/test`.',
+            ephemeral: true,
+        });
+        console.log('Invalid userVector: test was not completed!');
+    }
 };
