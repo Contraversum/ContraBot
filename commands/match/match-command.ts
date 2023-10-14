@@ -8,15 +8,9 @@ export const sendQuestion = async (interaction: any) => {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-    let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
     let userResponses = userContext?.userVector || [];
 
-    // TODO: user responses
     // TODO: check if user has completed the test
-
-    if (currentQuestionIndex === 0) {
-        userResponses = [];
-    }
 
     console.log(userContext);
 
