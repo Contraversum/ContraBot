@@ -4,7 +4,7 @@ import cron from 'cron';
 import 'dotenv/config'
 
 const questions = [
-    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
+    /*{ question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
@@ -35,7 +35,7 @@ const questions = [
     { question: 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.', tag: ['Datenschutz', 'Videoüberwachung'] },
     { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienpolitik' },
     { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Klimawandel' },
-    { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
+    */{ question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
     { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
     { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Wirtschaftspolitik' },
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
@@ -265,9 +265,12 @@ export const sendQuestion = async (interaction: any) => {
 
             await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
             await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
-            conversationStarter(textChannel, interaction, bestMatch.userVector, userResponses);
+            conversationStarter(textChannel, interaction, bestMatch, userResponses);
 
             interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+            client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+                user.send(`Du wurdest mit **@${interaction.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+            });
 
             verifyUser(interaction, guild);
 
@@ -289,14 +292,13 @@ export const sendQuestion = async (interaction: any) => {
     }
 }
 
-async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: number[], user: number[]) {
-
+async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: any, user: number[]) {
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
     const disagree: number[] = [];
 
     user.forEach((value, i) => {
-        const total = value + bestMatch[i];
+        const total = value + bestMatch.userVector[i];
         if (value !== 0 && total === 0) {
             disagree.push(i);
             addedToDisagree = true;
@@ -305,7 +307,7 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
     // Only add to disagree if the flag is still false
     if (!addedToDisagree || disagree.length < 6) {
         user.forEach((value, i) => {
-            const total = value + bestMatch[i];
+            const total = value + bestMatch.userVector[i];
             if (Math.abs(total) === 1) {
                 disagree.push(i);
             }
@@ -314,6 +316,36 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
 
     const selectedIndexes = getRandomDisagreement(disagree, 6);
     sendDisagreedQuestions(channelOfDestination, selectedIndexes.slice(0, 3));
+
+
+    let bestMatchSentMessage = false;
+
+    client.on('messageCreate', (message: any) => {
+        if (message.channel.id === channelOfDestination.id) {
+            if (message.author.id === bestMatch.userId) {
+                console.log(`Message from best match: ${message.author.id}`);
+                return;
+            }
+            // check if message was sent by the best match
+            if (message.author.id === String(bestMatch)) {
+                bestMatchSentMessage = true;
+            }
+        }
+    });
+    setTimeout(() => {
+        if (!bestMatchSentMessage) {
+            interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
+            client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+                user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
+            });
+            console.log(`Conversation ended due to inactivity`);
+
+            // Delete the channel and the bestMatch from the database
+            channelOfDestination.delete();
+            db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+            console.log(`Deleted: userId ${bestMatch.userId} is no longer on the server.`);
+        }
+    }, 30 * 1000); // 24 * 60 * 60 * 1000
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
@@ -343,7 +375,6 @@ function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
 }
 
 async function findMatchingUser(userId: string, userResponses: number[], guild: Guild): Promise<{ userId: string, username: string, userVector: number[], GuildMember: any } | null> {
-
     if (!userId || !Array.isArray(userResponses) || userResponses.length === 0) {
         console.log("Invalid input parameters");
         return null;
@@ -399,7 +430,7 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
