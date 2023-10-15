@@ -4,7 +4,7 @@ import cron from 'cron';
 import 'dotenv/config'
 
 const questions = [
-    /*{ question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
+    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
@@ -35,7 +35,7 @@ const questions = [
     { question: 'Bei der Videoüberwachung öffentlicher Plätze soll Gesichtserkennungssoftware eingesetzt werden dürfen.', tag: ['Datenschutz', 'Videoüberwachung'] },
     { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienpolitik' },
     { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Klimawandel' },
-    */{ question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
+    { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
     { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
     { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Wirtschaftspolitik' },
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
@@ -69,10 +69,10 @@ const checkForFeedbackRequests = async () => {
         if (discordUser) {
             await discordUser.send({
                 content: `
-                Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
-                Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern. 
-                Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
-                der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
+            Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
+            Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern. 
+            Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
+            der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
                 components: [actionRow]
             });
 
@@ -224,61 +224,8 @@ export const sendQuestion = async (interaction: any) => {
             { upsert: true }
         );
     } else {
-        const guildId = process.env.GUILD_ID;
-        if (!guildId) throw new Error('GUILD_ID not found');
+        initiateConversation(interaction, userResponses);
 
-        const guild: Guild | undefined = client.guilds.cache.get(guildId);
-        if (!guild) throw new Error('Guild not found');
-
-        const bestMatch = await findMatchingUser(interaction.user.id, userResponses, guild);
-        if (bestMatch) {
-            const interactionGuildMember = guild.members.cache.get(interaction.user.id);
-            if (!interactionGuildMember) throw new Error('interactionGuildMember was nog found');
-
-            bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
-            if (!guild) throw new Error('bestMatch.GuildMember');
-
-            const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
-
-            const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
-
-            const textChannel = await guild.channels.create({
-                parent: matchesCategory?.id,
-                name: channelName.toLowerCase(),
-                type: 0,
-            });
-
-            await textChannel.permissionOverwrites.edit(interactionGuildMember, {
-                ViewChannel: true,
-                SendMessages: true,
-            });
-            await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
-                ViewChannel: true,
-                SendMessages: true,
-            });
-
-            const everyone = await guild.roles.everyone;
-
-            await textChannel.permissionOverwrites.edit(everyone, {
-                ViewChannel: false,
-            });
-
-            await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
-            await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
-            conversationStarter(textChannel, interaction, bestMatch, userResponses);
-
-            interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
-            client.users.fetch(String(bestMatch.userId)).then((user: User) => {
-                user.send(`Du wurdest mit **@${interaction.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
-            });
-
-            verifyUser(interaction, guild);
-
-        }
-        else {
-            console.warn('No best match found');
-            interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
-        }
         // Reset context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -290,6 +237,63 @@ export const sendQuestion = async (interaction: any) => {
             }
         );
     }
+}
+
+async function initiateConversation(interaction: any, userResponses: number[]) {
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) throw new Error('GUILD_ID not found');
+
+    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    if (!guild) throw new Error('Guild not found');
+
+    const bestMatch = await findMatchingUser(interaction.user.id, userResponses, guild);
+    if (!bestMatch) {
+        console.warn('No best match found');
+        interaction.user.send("Leider konnte zur Zeit kein geeigneter Gesprächspartner gefunden werden. Bitte versuchen Sie es später erneut.");
+        return;
+    }
+
+    const interactionGuildMember = guild.members.cache.get(interaction.user.id);
+    if (!interactionGuildMember) throw new Error('interactionGuildMember was not found');
+
+    bestMatch.GuildMember = await guild.members.fetch(bestMatch.userId);
+    if (!bestMatch.GuildMember) throw new Error('bestMatch.GuildMember was not found');
+
+    const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
+    const channelName = `match-${interaction.user.username}-${bestMatch.username}`;
+
+    const textChannel = await guild.channels.create({
+        parent: matchesCategory?.id,
+        name: channelName.toLowerCase(),
+        type: 0,
+    });
+
+    await textChannel.permissionOverwrites.edit(interactionGuildMember, {
+        ViewChannel: true,
+        SendMessages: true,
+    });
+    await textChannel.permissionOverwrites.edit(bestMatch.GuildMember, {
+        ViewChannel: true,
+        SendMessages: true,
+    });
+
+    const everyone = await guild.roles.everyone;
+    await textChannel.permissionOverwrites.edit(everyone, {
+        ViewChannel: false,
+    });
+
+    await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.GuildMember} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+    await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
+
+    // This function will send starter questions where they disagreed
+    conversationStarter(textChannel, interaction, bestMatch, userResponses);
+
+    interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+    client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+        user.send(`Du wurdest mit **@${interaction.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
+    });
+
+    verifyUser(interaction, guild);
 }
 
 async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: any, user: number[]) {
@@ -324,28 +328,41 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
         if (message.channel.id === channelOfDestination.id) {
             if (message.author.id === bestMatch.userId) {
                 console.log(`Message from best match: ${message.author.id}`);
-                return;
-            }
-            // check if message was sent by the best match
-            if (message.author.id === String(bestMatch)) {
                 bestMatchSentMessage = true;
+                return;
             }
         }
     });
+
+    // send message into the channel after 8 hours if no message was sent
     setTimeout(() => {
         if (!bestMatchSentMessage) {
+            channelOfDestination.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle(`👋 Hallo ${interaction.user.username}, dein Gesprächspartner hat sich noch nicht gemeldet.`)
+                        .setDescription(`Nach 24 Stunden inactivität wirst du ein neuen Gesprächspartner erhalten.`)
+                        .setColor('#fb2364')
+                ]
+            });
+        }
+    }, 1000 * 30); // 8 hours
+
+    setTimeout(() => {
+        if (!bestMatchSentMessage) {
+            // Send messages to both users
             interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
             client.users.fetch(String(bestMatch.userId)).then((user: User) => {
                 user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
             });
-            console.log(`Conversation ended due to inactivity`);
 
             // Delete the channel and the bestMatch from the database
             channelOfDestination.delete();
             db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
-            console.log(`Deleted: userId ${bestMatch.userId} is no longer on the server.`);
+
+            initiateConversation(interaction, user);
         }
-    }, 30 * 1000); // 24 * 60 * 60 * 1000
+    }, 24 * 60 * 60 * 1000); // 24 hours
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
@@ -430,7 +447,7 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
