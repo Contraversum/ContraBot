@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
 import { client, db } from '../../common';
+import { encrypt, decrypt } from '../../encryptionUtils';
 import cron from 'cron';
 import 'dotenv/config'
 
@@ -170,7 +171,12 @@ export const sendQuestion = async (interaction: any) => {
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
     let currentQuestionIndex = userContext?.currentQuestionIndex || 0;
-    let userResponses = userContext?.userVector || [];
+    let userResponses;
+    if (Array.isArray(userContext?.userVector)) {
+        userResponses = userContext?.userVector || [];
+    } else {
+        userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
+    }
     var currentQuestionDisplay = currentQuestionIndex + 1
 
     if (currentQuestionIndex === 0) {
@@ -203,7 +209,7 @@ export const sendQuestion = async (interaction: any) => {
             components: [builder]
         });
 
-
+        const encryptedUserVector = encrypt(JSON.stringify(userResponses));
         // Update context for this user in the database
         await db.db('contrabot').collection("users").updateOne(
             { userId: interaction.user.id },
@@ -213,7 +219,7 @@ export const sendQuestion = async (interaction: any) => {
                     username: interaction.user.username,
 
                     currentQuestionIndex: currentQuestionIndex + 1,
-                    userVector: userResponses,
+                    userVector: encryptedUserVector,
                     feedbackRequestSent: false,
                     currentFeedbackQuestionIndex: 0,
                     invited: interaction.user.invited,
@@ -366,20 +372,40 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
                 continue;
             }
 
-            if (!Array.isArray(user.userVector) || user.userVector.length === 0) {
-                console.log(`Skipped: Missing or invalid userVector for userId ${user.userId}`);
+            let decryptedUserVector: number[]; // Explicit type declaration
+            if (typeof user.userVector === 'string') { // Check if it's a string
+                try {
+                    decryptedUserVector = JSON.parse(decrypt(user.userVector));
+                } catch (error) {
+                    console.error(`Failed to decrypt userVector for userId ${user.userId}:`, error);
+                    continue;
+                }
+            } else {
+                console.warn(`Skipped: userVector for userId ${user.userId} is not a string`);
+                continue;
+            }
+
+
+            if (!Array.isArray(decryptedUserVector) || decryptedUserVector.length === 0) {
+                console.log(`Skipped: Missing or invalid decrypted userVector for userId ${user.userId}`);
                 continue;
             }
 
             const differenceScore = userResponses.reduce((acc, value, index) => {
-                return acc + value * user.userVector[index];
+                return acc + value * decryptedUserVector[index];
             }, 0);
 
             if (differenceScore < lowestDifferenceScore) {
                 lowestDifferenceScore = differenceScore;
-                mostOppositeUser = { userId: user.userId, username: user.username, userVector: user.userVector, GuildMember: null };
+                mostOppositeUser = {
+                    userId: user.userId,
+                    username: user.username,
+                    userVector: decryptedUserVector,
+                    GuildMember: null
+                };
             }
         }
+
 
         if (mostOppositeUser) {
             const isMember = await guild.members.fetch(mostOppositeUser.userId).then(() => true).catch(() => false);
