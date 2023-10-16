@@ -1,5 +1,5 @@
 import { Guild, GuildMember, Role, Collection } from 'discord.js';
-import { client, db } from './index';
+import { client, db } from './common';
 
 async function trackInvites() {
     const guildId = process.env.GUILD_ID;
@@ -17,7 +17,7 @@ async function trackInvites() {
     const invites = await guild.invites.fetch();
 
     // Create an object to store invite data per user
-    const inviteData: { [key: string]: number } = {};
+    const inviteData: { [ key: string ]: number } = {};
 
     // Store number of invites per inviter
     invites.forEach((invite) => {
@@ -28,7 +28,7 @@ async function trackInvites() {
             const inviteCount = (invite.uses !== null ? invite.uses : 0);
 
             // Increment the invite count for the inviter
-            inviteData[inviterId] = (inviteData[inviterId] || 0) + inviteCount;
+            inviteData[ inviterId ] = (inviteData[ inviterId ] || 0) + inviteCount;
         }
     });
 
@@ -43,7 +43,7 @@ async function trackInvites() {
             continue; // Skip this user and continue with others
         }
 
-        let inviteCount = inviteData[userId] || 0;
+        let inviteCount = inviteData[ userId ] || 0;
 
         // Update the invite count for the user in the database
         await db.db('contrabot').collection('users').updateOne(

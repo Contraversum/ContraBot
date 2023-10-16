@@ -37,7 +37,7 @@ for (const folder of commandFolders) {
 }
 
 // Catch command errors
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async interaction => {
     // Handle Slash commands
     if (interaction.isChatInputCommand()) {
         const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
@@ -85,30 +85,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 },
                 { upsert: true }
             );
-        } else if (buttonId === 'start_test') {
-            await interaction.deferUpdate();
-            sendQuestion(interaction);
         } else {
-            // Fetch user's context from the database
-            const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
+            if (buttonId !== 'start_test') {
+                // Fetch user's context from the database
+                const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-            const userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
+                const userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
 
-            // Update the userResponses based on button clicked
-            if (buttonId === 'agree') userResponses.push(1);
-            else if (buttonId === 'disagree') userResponses.push(-1);
-            else if (buttonId === 'neutral') userResponses.push(0);
+                // Update the userResponses based on button clicked
+                if (buttonId === 'agree') userResponses.push(1);
+                else if (buttonId === 'disagree') userResponses.push(-1);
+                else if (buttonId === 'neutral') userResponses.push(0);
 
-            // Update the userResponses for this user in the database
-            const encryptedUserVector = encrypt(JSON.stringify(userResponses));
-            await db.db('contrabot').collection("users").updateOne(
-                { userId: interaction.user.id },
-                {
-                    $set: {
-                        userVector: encryptedUserVector
+                // Update the userResponses for this user in the database
+                const encryptedUserVector = encrypt(JSON.stringify(userResponses));
+                await db.db('contrabot').collection("users").updateOne(
+                    { userId: interaction.user.id },
+                    {
+                        $set: {
+                            userVector: encryptedUserVector
+                        }
                     }
-                }
-            );
+                );
+            }
 
             await interaction.deferUpdate();
             sendQuestion(interaction);
@@ -126,23 +125,25 @@ const jwtClient = new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     undefined,
     process.env.PRIVATE_KEY,
-    ['https://www.googleapis.com/auth/spreadsheets']
+    [ 'https://www.googleapis.com/auth/spreadsheets' ]
 );
 
 const sheets = google.sheets({ version: 'v4', auth: jwtClient });
 
 // Catch feedback messages
-client.on(Events.MessageCreate, async (message) => {
+client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
 
     try {
         const userContext = await db.db('contrabot').collection("users").findOne({ userId: message.author.id });
 
-        if (userContext?.feedbackInProgress) {
-            let currentFeedbackQuestionIndex = userContext?.currentFeedbackQuestionIndex || 0;
+        if (!userContext) return;
+
+        if (userContext.feedbackInProgress) {
+            let currentFeedbackQuestionIndex = userContext.currentFeedbackQuestionIndex || 0;
 
             // Calculate the column where the answer should be placed.
-            const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
+            const columnForAnswer = COLUMNS[ currentFeedbackQuestionIndex + 1 ];  // +1 to skip the first column which might have the userID
 
             // Find the row number for the current user (assuming the user's ID is in the first column)
             const response = await sheets.spreadsheets.values.get({
@@ -150,7 +151,7 @@ client.on(Events.MessageCreate, async (message) => {
                 range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
             });
             const rows = response.data.values || [];
-            let rowIndex = rows.findIndex((row: any) => row[0] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+            let rowIndex = rows.findIndex((row: any) => row[ 0 ] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
 
             // If the user is not found, create a new row for them
             if (rowIndex === 0) {
@@ -161,7 +162,7 @@ client.on(Events.MessageCreate, async (message) => {
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
                         values: [
-                            [message.author.id]  // userID in the first column
+                            [ message.author.id ]  // userID in the first column
                         ]
                     }
                 } as any);
@@ -175,7 +176,7 @@ client.on(Events.MessageCreate, async (message) => {
                 valueInputOption: 'RAW',
                 resource: {
                     values: [
-                        [message.content]
+                        [ message.content ]
                     ]
                 }
             } as any);
@@ -183,7 +184,7 @@ client.on(Events.MessageCreate, async (message) => {
             currentFeedbackQuestionIndex++;
 
             if (currentFeedbackQuestionIndex < Feedbackquestions.length) {
-                message.author.send(Feedbackquestions[currentFeedbackQuestionIndex]);
+                message.author.send(Feedbackquestions[ currentFeedbackQuestionIndex ]);
 
                 await db.db('contrabot').collection("users").updateOne(
                     { userId: message.author.id },
@@ -209,6 +210,3 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
-
-
-export { client, db };
