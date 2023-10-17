@@ -4,7 +4,7 @@ import cron from 'cron';
 import 'dotenv/config'
 
 const questions = [
-    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
+    /*{ question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
@@ -36,7 +36,7 @@ const questions = [
     { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienpolitik' },
     { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Klimawandel' },
     { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
-    { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
+    */{ question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
     { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Wirtschaftspolitik' },
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
@@ -294,6 +294,15 @@ async function initiateConversation(interaction: any, userResponses: number[]) {
     });
 
     verifyUser(interaction, guild);
+
+    // Add conversation to database
+    const conversationInitiationTime = new Date();
+    await db.db('contrabot').collection('conversations').insertOne({
+        initiationTime: conversationInitiationTime,
+        interactionUserId: interaction.user.id,
+        bestMatchUserId: bestMatch.userId,
+        channelId: textChannel.id
+    });
 }
 
 async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: any, user: number[]) {
@@ -327,17 +336,24 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
     client.on('messageCreate', (message: any) => {
         if (message.channel.id === channelOfDestination.id) {
             if (message.author.id === bestMatch.userId) {
-                console.log(`Message from best match: ${message.author.id}`);
                 bestMatchSentMessage = true;
                 return;
             }
         }
     });
 
+    const currentTime = new Date();
+
     // send message into the channel after 8 hours if no message was sent
-    setTimeout(() => {
-        if (!bestMatchSentMessage) {
-            channelOfDestination.send({
+    const eightHourCheck = new cron.CronJob('0 */8 * * *', async () => {
+        const eightHoursAgo = new Date(currentTime.getTime() - (8 * 60 * 60 * 1000));
+
+        const conversations = await db.db('contrabot').collection('conversations').find({
+            initiationTime: { $lte: eightHoursAgo, $gte: new Date(eightHoursAgo.getTime() - 3600 * 1000) }
+        }).toArray();
+
+        conversations.forEach(async () => {
+            await channelOfDestination.send({
                 embeds: [
                     new EmbedBuilder()
                         .setTitle(`👋 Hallo ${interaction.user.username}, dein Gesprächspartner hat sich noch nicht gemeldet.`)
@@ -345,24 +361,35 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
                         .setColor('#fb2364')
                 ]
             });
-        }
-    }, 1000 * 30); // 8 hours
+        });
 
-    setTimeout(() => {
-        if (!bestMatchSentMessage) {
-            // Send messages to both users
-            interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
-            client.users.fetch(String(bestMatch.userId)).then((user: User) => {
-                user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
-            });
+    });
+    eightHourCheck.start();
 
-            // Delete the channel and the bestMatch from the database
-            channelOfDestination.delete();
-            db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+    const twentyFourHourCheck = new cron.CronJob('0 0 */1 * *', async () => {
+        const twentyFourHoursAgo = new Date(currentTime.getTime() - (24 * 60 * 60 * 1000));
 
-            initiateConversation(interaction, user);
-        }
-    }, 24 * 60 * 60 * 1000); // 24 hours
+        const conversations = await db.db('contrabot').collection('conversations').find({
+            initiationTime: { $lte: twentyFourHoursAgo, $gte: new Date(twentyFourHoursAgo.getTime() - 3600 * 1000) }
+        }).toArray();
+
+        conversations.forEach(async (conv) => {
+            if (!bestMatchSentMessage) {
+                //Send messages to both users
+                interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
+                client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+                    user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
+                });
+
+                // Delete the channel, conversation and BestMatch from the database
+                channelOfDestination.delete();
+                db.db('contrabot').collection("conversations").deleteOne({ _id: conv._id });
+                db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+            }
+        });
+    });
+    twentyFourHourCheck.start();
+
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
@@ -447,7 +474,7 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
