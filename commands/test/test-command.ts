@@ -4,7 +4,7 @@ import cron from 'cron';
 import 'dotenv/config'
 
 const questions = [
-    /*{ question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
+    { question: 'Auf allen Autobahnen soll ein generelles Tempolimit gelten.', tag: ['Verkehrssicherheit', ' Klimawandel'] },
     { question: 'Deutschland soll seine Verteidigungsausgaben erhöhen.', tag: 'Verteidigungspolitik' },
     { question: 'Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.', tag: ['Wahlalter', 'Demokratie'] },
     { question: 'Die Förderung von Windenenergie soll beendet werden?', tag: ['Energiepolitik', 'Klimawandel'] },
@@ -36,7 +36,7 @@ const questions = [
     { question: 'Auch Ehepaare ohne Kinder sollen weiterhin steuerlich begünstigt werden.', tag: 'Familienpolitik' },
     { question: 'Ökologische Landwirtschaft soll stärker gefördert werden als konventionelle Landwirtschaft.', tag: 'Klimawandel' },
     { question: 'Islamische Verbände sollen als Religionsgemeinschaften staatlich anerkannt werden können.', tag: ['Religionspolitik', 'Minderheitenpolitik'] },
-    */{ question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
+    { question: 'Der staatlich festgelegte Preis für den Ausstoß von CO2 beim Heizen und Autofahren soll stärker steigen als geplant.', tag: ['Klimaschutz', 'Klimawandel'] },
     { question: 'Die Schuldenbremse im Grundgesetz soll beibehalten werden.', tag: 'Wirtschaftspolitik' },
     { question: 'Asyl soll weiterhin nur politisch Verfolgten gewährt werden.', tag: 'Migrationspolitik' },
     { question: 'Der gesetzliche Mindestlohn sollte erhöht werden.', tag: 'Sozialpolitik' },
@@ -211,18 +211,19 @@ export const sendQuestion = async (interaction: any) => {
                 $set: {
                     userId: interaction.user.id,
                     username: interaction.user.username,
-
                     currentQuestionIndex: currentQuestionIndex + 1,
                     userVector: userResponses,
-                    feedbackRequestSent: false,
                     currentFeedbackQuestionIndex: 0,
                     invited: interaction.user.invited,
                     joined: interaction.user.joinedTimestamp
-
+                },
+                $setOnInsert: {
+                    feedbackRequestSent: false
                 }
             },
             { upsert: true }
         );
+
     } else {
         initiateConversation(interaction, userResponses);
 
@@ -301,7 +302,8 @@ async function initiateConversation(interaction: any, userResponses: number[]) {
         initiationTime: conversationInitiationTime,
         interactionUserId: interaction.user.id,
         bestMatchUserId: bestMatch.userId,
-        channelId: textChannel.id
+        channelId: textChannel.id,
+        eightHourNotificationSent: false
     });
 }
 
@@ -342,39 +344,40 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
         }
     });
 
-    const currentTime = new Date();
-
     // send message into the channel after 8 hours if no message was sent
     const eightHourCheck = new cron.CronJob('0 */8 * * *', async () => {
-        const eightHoursAgo = new Date(currentTime.getTime() - (8 * 60 * 60 * 1000));
-
         const conversations = await db.db('contrabot').collection('conversations').find({
-            initiationTime: { $lte: eightHoursAgo, $gte: new Date(eightHoursAgo.getTime() - 3600 * 1000) }
+            channelId: channelOfDestination.id
         }).toArray();
 
-        conversations.forEach(async () => {
-            await channelOfDestination.send({
-                embeds: [
-                    new EmbedBuilder()
-                        .setTitle(`👋 Hallo ${interaction.user.username}, dein Gesprächspartner hat sich noch nicht gemeldet.`)
-                        .setDescription(`Nach 24 Stunden inactivität wirst du ein neuen Gesprächspartner erhalten.`)
-                        .setColor('#fb2364')
-                ]
-            });
+        conversations.forEach(async (conv) => {
+            if (!bestMatchSentMessage && !conv.eightHourNotificationSent) {
+                await channelOfDestination.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle(`👋 Hallo ${interaction.user.username}, dein Gesprächspartner hat sich noch nicht gemeldet.`)
+                            .setDescription(`Nach 24 Stunden inactivität wirst du ein neuen Gesprächspartner erhalten.`)
+                            .setColor('#fb2364')
+                    ]
+                });
+                // update flag in the database
+                await db.db('contrabot').collection('conversations').updateOne(
+                    { channelId: channelOfDestination.id },
+                    { $set: { eightHourNotificationSent: true } }
+                );
+            }
         });
 
     });
     eightHourCheck.start();
 
     const twentyFourHourCheck = new cron.CronJob('0 0 */1 * *', async () => {
-        const twentyFourHoursAgo = new Date(currentTime.getTime() - (24 * 60 * 60 * 1000));
-
         const conversations = await db.db('contrabot').collection('conversations').find({
-            initiationTime: { $lte: twentyFourHoursAgo, $gte: new Date(twentyFourHoursAgo.getTime() - 3600 * 1000) }
+            channelId: channelOfDestination.id
         }).toArray();
 
         conversations.forEach(async (conv) => {
-            if (!bestMatchSentMessage) {
+            if (!bestMatchSentMessage && conv.eightHourNotificationSent) {
                 //Send messages to both users
                 interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
                 client.users.fetch(String(bestMatch.userId)).then((user: User) => {
@@ -384,12 +387,11 @@ async function conversationStarter(channelOfDestination: any, interaction: any, 
                 // Delete the channel, conversation and BestMatch from the database
                 channelOfDestination.delete();
                 db.db('contrabot').collection("conversations").deleteOne({ _id: conv._id });
-                db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+                await db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
             }
         });
     });
     twentyFourHourCheck.start();
-
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
@@ -474,7 +476,7 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
