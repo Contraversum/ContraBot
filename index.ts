@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Events } from 'discord.js';
-import { sendQuestion, sendTestButton } from './commands/test/test-command';
+import { sendQuestion } from './commands/test/test-command';
+import { encrypt, decrypt } from './encryptionUtils';
 import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
 import * as fs from 'fs';
 import path from 'path'
@@ -91,7 +92,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             // Fetch user's context from the database
             const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-            const userResponses = userContext?.userVector || [];
+            const userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
 
             // Update the userResponses based on button clicked
             if (buttonId === 'agree') userResponses.push(1);
@@ -99,11 +100,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
             else if (buttonId === 'neutral') userResponses.push(0);
 
             // Update the userResponses for this user in the database
+            const encryptedUserVector = encrypt(JSON.stringify(userResponses));
             await db.db('contrabot').collection("users").updateOne(
                 { userId: interaction.user.id },
                 {
                     $set: {
-                        userVector: userResponses
+                        userVector: encryptedUserVector
                     }
                 }
             );
