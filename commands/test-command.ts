@@ -1,10 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel } from 'discord.js';
-import { client, db } from '../../common';
+import { client, db } from '../common';
 import cron from 'cron';
 import 'dotenv/config';
-import questions from '../../questions';
-import findMatchingUser from '../../functions/findMatchingUser';
-import conversationStarter from '../../functions/conversationStarter';
+import questions from '../questions';
+import findMatchingUser from '../functions/findMatchingUser';
+import conversationStarter from '../functions/conversationStarter';
 
 const checkForFeedbackRequests = async () => {
     const now = new Date();
@@ -31,11 +31,11 @@ const checkForFeedbackRequests = async () => {
         if (discordUser) {
             await discordUser.send({
                 content: `
-                Hallo 👋, vor einer Woche hast du den Test ausgefüllt. 
-                Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern. 
+                Hallo 👋, vor einer Woche hast du den Test ausgefüllt.
+                Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern.
                 Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
                 der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
-                components: [actionRow]
+                components: [ actionRow ]
             });
 
             // Update context for this user in the database
@@ -93,7 +93,7 @@ const sendTestReminder = async () => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        for (const [userID, member] of members) {
+        for (const [ userID, member ] of members) {
             const joinDate = member.joinedAt;
             if (!joinDate) continue;
 
@@ -108,7 +108,7 @@ const sendTestReminder = async () => {
                 await member.send("Hey 👋, du hast den Test noch nicht ausgefüllt. Wir würden uns freuen, wenn du den Test noch ausfüllst, damit du mit anderen Usern gematcht werden kannst.");
                 await member.send("Um einen Test zu starten, tippe /test in den Server ein oder klicke auf die rote Taste 'Test starten' im Channel #how-to-basics.");
 
-                // Add the user to the database and creates reminderSent status 
+                // Add the user to the database and creates reminderSent status
                 await db.db('contrabot').collection('users').updateOne(
                     { userId: userID },
                     {
@@ -143,7 +143,7 @@ export const sendQuestion = async (interaction: any) => {
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle("Frage: " + currentQuestionDisplay + "/38")
-            .setDescription(questions[currentQuestionIndex].question)
+            .setDescription(questions[ currentQuestionIndex ].question)
             .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -162,8 +162,8 @@ export const sendQuestion = async (interaction: any) => {
         ]);
 
         interaction.user.send({
-            embeds: [embed],
-            components: [builder]
+            embeds: [ embed ],
+            components: [ builder ]
         });
 
 
@@ -263,12 +263,10 @@ function verifyUser(interaction: any, guild: Guild) {
     interactionGuildMember.roles.add(role).catch(console.error);
 }
 
-export const data = new SlashCommandBuilder().setName('test').setDescription('Asks the test questions!');
-export const execute = async (interaction: any) => {
+export async function executeTest(interaction: any) {
     await interaction.reply({
         content: 'Deine Meinung ist gefragt! Bitte kommentiere die folgenden These mit 👍, 👎 oder 😐. Test wurde gestartet.\nBitte schaue in deinen Direktnachrichten nach :)',
         ephemeral: true,
     });
     sendQuestion(interaction);
 };
-

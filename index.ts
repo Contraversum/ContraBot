@@ -1,52 +1,57 @@
 import 'dotenv/config'
-import { Events } from 'discord.js';
-import { sendQuestion, sendTestButton } from './commands/test/test-command';
+import { Events, REST, Routes } from 'discord.js';
+import { executeTest, sendQuestion, sendTestButton } from './commands/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey';
-import * as fs from 'fs';
-import path from 'path'
 import { google } from 'googleapis';
-import { client, db, ClientWithCommands } from './common';
+import { client, db } from './common';
+import { executeMatch } from "./commands/match-command";
 
-client.on(Events.ClientReady, async (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
-    await db.connect();
-});
 client.login(process.env.TOKEN); // Log in to the bot
 
-client.on("ready", () => {
+client.on(Events.ClientReady, async c => {
+    console.log(`Ready! Logged in as ${c.user.tag}`);
+    await db.connect();
     sendTestButton()
+    //add later
+    //client.user.setActivity("123", {ActivityType.Listening})
+
+    const rest = new REST().setToken(process.env.TOKEN!);
+
+    (async () => {
+        try {
+            console.log('Started refreshing application (/) commands.');
+
+            await rest.put(Routes.applicationCommands(client.user!.id), {
+                body:
+                    [
+                        {
+                            name: 'match',
+                            description: 'Requests new match without retaking the test.'
+                        },
+                        {
+                            name: 'test',
+                            description: 'Asks the test questions!'
+                        },
+                    ]
+            });
+
+            console.log('Successfully reloaded application (/) commands.');
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+
 });
 
-// Load commands
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
-for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-        }
-    }
-}
-
 // Catch command errors
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async interaction => {
     // Handle Slash commands
     if (interaction.isChatInputCommand()) {
-        const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
-
-        if (!command) {
-            console.error(`No command matching ${interaction.commandName} was found.`);
-            return;
-        }
-
         try {
-            await command.execute(interaction);
+            if (interaction.commandName === 'test')
+                await executeTest(interaction);
+            else if (interaction.commandName === 'match')
+                await executeMatch(interaction);
         } catch (error) {
             console.error(error);
             if (interaction.replied || interaction.deferred) {
@@ -123,7 +128,7 @@ const jwtClient = new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     undefined,
     process.env.PRIVATE_KEY,
-    ['https://www.googleapis.com/auth/spreadsheets']
+    [ 'https://www.googleapis.com/auth/spreadsheets' ]
 );
 
 const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -139,7 +144,7 @@ client.on(Events.MessageCreate, async (message) => {
             let currentFeedbackQuestionIndex = userContext?.currentFeedbackQuestionIndex || 0;
 
             // Calculate the column where the answer should be placed.
-            const columnForAnswer = COLUMNS[currentFeedbackQuestionIndex + 1];  // +1 to skip the first column which might have the userID
+            const columnForAnswer = COLUMNS[ currentFeedbackQuestionIndex + 1 ];  // +1 to skip the first column which might have the userID
 
             // Find the row number for the current user (assuming the user's ID is in the first column)
             const response = await sheets.spreadsheets.values.get({
@@ -147,7 +152,7 @@ client.on(Events.MessageCreate, async (message) => {
                 range: `${START_COLUMN}:${START_COLUMN}`  // search in the first column only
             });
             const rows = response.data.values || [];
-            let rowIndex = rows.findIndex((row: any) => row[0] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
+            let rowIndex = rows.findIndex((row: any) => row[ 0 ] === message.author.id.toString()) + 1; // +1 because index is 0-based and rows in Google Sheets are 1-based.
 
             // If the user is not found, create a new row for them
             if (rowIndex === 0) {
@@ -158,7 +163,7 @@ client.on(Events.MessageCreate, async (message) => {
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
                         values: [
-                            [message.author.id]  // userID in the first column
+                            [ message.author.id ]  // userID in the first column
                         ]
                     }
                 } as any);
@@ -172,7 +177,7 @@ client.on(Events.MessageCreate, async (message) => {
                 valueInputOption: 'RAW',
                 resource: {
                     values: [
-                        [message.content]
+                        [ message.content ]
                     ]
                 }
             } as any);
@@ -180,7 +185,7 @@ client.on(Events.MessageCreate, async (message) => {
             currentFeedbackQuestionIndex++;
 
             if (currentFeedbackQuestionIndex < Feedbackquestions.length) {
-                message.author.send(Feedbackquestions[currentFeedbackQuestionIndex]);
+                message.author.send(Feedbackquestions[ currentFeedbackQuestionIndex ]);
 
                 await db.db('contrabot').collection("users").updateOne(
                     { userId: message.author.id },
@@ -206,6 +211,3 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
-
-
-export { client, db };
