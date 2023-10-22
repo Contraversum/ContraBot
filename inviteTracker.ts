@@ -18,7 +18,7 @@ export async function trackInvites() {
     const invites = await guild.invites.fetch();
 
     // Create an object to store invite data per user
-    const inviteData: { [key: string]: number } = {};
+    const inviteData: { [ key: string ]: number } = {};
 
     // Store number of invites per inviter
     invites.forEach((invite) => {
@@ -29,8 +29,7 @@ export async function trackInvites() {
             const inviteCount = (invite.uses !== null ? invite.uses : 0);
 
             // Increment the invite count for the inviter
-            inviteData[inviterId] = (inviteData[inviterId] || 0) + inviteCount;
-            console.log(inviteData);
+            inviteData[ inviterId ] = (inviteData[ inviterId ] || 0) + inviteCount;
         }
     });
 
@@ -45,12 +44,12 @@ export async function trackInvites() {
             continue; // Skip this user and continue with others
         }
 
-        let inviteCount = inviteData[userId] || 0;
+        let inviteCount = inviteData[ userId ] || 0;
 
         // Update the invite count for the user in the database
         await db.db('contrabot').collection('users').updateOne(
             { userId: userId },
-            { $set: { inviteCount: inviteCount } }
+            { $set: { inviteCount } }
         );
 
         assignRoles(inviteCount, userId, guild);
