@@ -3,9 +3,9 @@ import { client, db } from '../../common';
 import { encrypt, decrypt } from '../../encryptionUtils';
 import cron from 'cron';
 import 'dotenv/config';
-import questions from '../../questions';
-import findMatchingUser from '../../functions/findMatchingUser';
-import conversationStarter from '../../functions/conversationStarter';
+import questions from '../questions';
+import findMatchingUser from '../functions/findMatchingUser';
+import conversationStarter from '../functions/conversationStarter';
 
 const checkForFeedbackRequests = async () => {
     const now = new Date();
@@ -522,8 +522,7 @@ function verifyUser(interaction: any, guild: Guild) {
     interactionGuildMember.roles.add(role).catch(console.error);
 }
 
-export const data = new SlashCommandBuilder().setName('test').setDescription('Asks the test questions!');
-export const execute = async (interaction: any) => {
+export async function executeTest(interaction: any) {
     await interaction.reply({
         content: 'Deine Meinung ist gefragt! Bitte kommentiere die folgenden These mit 👍, 👎 oder 😐. Test wurde gestartet.\nBitte schaue in deinen Direktnachrichten nach :)',
         ephemeral: true,

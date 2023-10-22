@@ -1,11 +1,10 @@
 import { SlashCommandBuilder, Guild } from 'discord.js';
-import { db } from '../../common';
+import { db } from '../common';
 import 'dotenv/config';
-import questions from '../../questions';
-import { sendQuestion } from '../test/test-command';
+import questions from '../questions';
+import { sendQuestion } from './test-command';
 
-export const data = new SlashCommandBuilder().setName('match').setDescription('Requests new match without retaking the test.');
-export const execute = async (interaction: any) => {
+export async function executeMatch(interaction: any) {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 

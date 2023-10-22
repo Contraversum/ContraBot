@@ -1,51 +1,57 @@
 import 'dotenv/config'
-import { Events } from 'discord.js';
-import { encrypt, decrypt } from './encryptionUtils';
-import { sendQuestion, sendTestButton } from './commands/test/test-command';
+import { Events, REST, Routes } from 'discord.js';
+import { executeTest, sendQuestion, sendTestButton } from './commands/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey';
-import * as fs from 'fs';
-import path from 'path';
-import { trackInvites } from './inviteTracker';
 import { google } from 'googleapis';
-import { client, db, ClientWithCommands } from './common';
+import { client, db } from './common';
+import { executeMatch } from "./commands/match-command";
 
-client.on(Events.ClientReady, async (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
-    await db.connect();
-    await trackInvites();
-});
 client.login(process.env.TOKEN); // Log in to the bot
 
-// Load commands
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
-for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+client.on(Events.ClientReady, async c => {
+    console.log(`Ready! Logged in as ${c.user.tag}`);
+    await db.connect();
+    sendTestButton()
+    //add later
+    //client.user.setActivity("123", {ActivityType.Listening})
+
+    const rest = new REST().setToken(process.env.TOKEN!);
+
+    (async () => {
+        try {
+            console.log('Started refreshing application (/) commands.');
+
+            await rest.put(Routes.applicationCommands(client.user!.id), {
+                body:
+                    [
+                        {
+                            name: 'match',
+                            description: 'Requests new match without retaking the test.'
+                        },
+                        {
+                            name: 'test',
+                            description: 'Asks the test questions!'
+                        },
+                    ]
+            });
+
+            console.log('Successfully reloaded application (/) commands.');
+        } catch (error) {
+            console.error(error);
         }
-    }
-}
+    })();
+
+});
 
 // Catch command errors
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async interaction => {
     // Handle Slash commands
     if (interaction.isChatInputCommand()) {
-        const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
-
-        if (!command) {
-            console.error(`No command matching ${interaction.commandName} was found.`);
-            return;
-        }
-
         try {
-            await command.execute(interaction);
+            if (interaction.commandName === 'test')
+                await executeTest(interaction);
+            else if (interaction.commandName === 'match')
+                await executeMatch(interaction);
         } catch (error) {
             console.error(error);
             if (interaction.replied || interaction.deferred) {
