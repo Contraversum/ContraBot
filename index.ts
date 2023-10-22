@@ -95,7 +95,7 @@ client.on(Events.InteractionCreate, async interaction => {
             // Fetch user's context from the database
             const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-            const userResponses = userContext?.userVector || [];
+            const userResponses = userContext?.userVector ? JSON.parse(decrypt(userContext.userVector)) : [];
 
             // Update the userResponses based on button clicked
             if (buttonId === 'agree') userResponses.push(1);
@@ -103,11 +103,12 @@ client.on(Events.InteractionCreate, async interaction => {
             else if (buttonId === 'neutral') userResponses.push(0);
 
             // Update the userResponses for this user in the database
+            const encryptedUserVector = encrypt(JSON.stringify(userResponses));
             await db.db('contrabot').collection("users").updateOne(
                 { userId: interaction.user.id },
                 {
                     $set: {
-                        userVector: userResponses
+                        userVector: encryptedUserVector
                     }
                 }
             );
@@ -211,3 +212,9 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
+
+client.on('guildMemberAdd', async () => {
+    await trackInvites();
+});
+
+export { client, db };

@@ -1,7 +1,8 @@
+import 'dotenv/config'
 import { Guild, GuildMember, Role, Collection } from 'discord.js';
 import { client, db } from './index';
 
-async function trackInvites() {
+export async function trackInvites() {
     const guildId = process.env.GUILD_ID;
     if (!guildId) {
         console.error('GUILD_ID is not defined in .env');
@@ -17,7 +18,7 @@ async function trackInvites() {
     const invites = await guild.invites.fetch();
 
     // Create an object to store invite data per user
-    const inviteData: { [key: string]: number } = {};
+    const inviteData: { [ key: string ]: number } = {};
 
     // Store number of invites per inviter
     invites.forEach((invite) => {
@@ -28,7 +29,7 @@ async function trackInvites() {
             const inviteCount = (invite.uses !== null ? invite.uses : 0);
 
             // Increment the invite count for the inviter
-            inviteData[inviterId] = (inviteData[inviterId] || 0) + inviteCount;
+            inviteData[ inviterId ] = (inviteData[ inviterId ] || 0) + inviteCount;
         }
     });
 
@@ -43,12 +44,12 @@ async function trackInvites() {
             continue; // Skip this user and continue with others
         }
 
-        let inviteCount = inviteData[userId] || 0;
+        let inviteCount = inviteData[ userId ] || 0;
 
         // Update the invite count for the user in the database
         await db.db('contrabot').collection('users').updateOne(
             { userId: userId },
-            { $set: { inviteCount: inviteCount } }
+            { $set: { inviteCount } }
         );
 
         assignRoles(inviteCount, userId, guild);
@@ -58,18 +59,18 @@ async function trackInvites() {
 
 async function assignRoles(inviteCount: number, userId: string, guild: Guild) {
     const rolesToAssign = [
-        { role: '1151603003279802498', minInviteCount: 1, maxInviteCount: 2 }, // Invite Duke
-        { role: '1151555451910115411', minInviteCount: 3, maxInviteCount: 6 }, // Invite Prince
-        { role: '1151555734652342372', minInviteCount: 7, maxInviteCount: 19 }, // Invite King
-        { role: '1151555885672443906', minInviteCount: 20, maxInviteCount: 49 }, // Invite Emperor
-        { role: '1151555968140841012', minInviteCount: 50, maxInviteCount: Infinity }, // Invite God
+        { role: process.env.INVITE_DUKE, minInviteCount: 1, maxInviteCount: 2 }, // Invite Duke
+        { role: process.env.INVITE_PRINCE, minInviteCount: 3, maxInviteCount: 6 }, // Invite Prince
+        { role: process.env.INVITE_KING, minInviteCount: 7, maxInviteCount: 19 }, // Invite King
+        { role: process.env.INVITE_EMPEROR, minInviteCount: 20, maxInviteCount: 49 }, // Invite Emperor
+        { role: process.env.INVITE_GOD, minInviteCount: 50, maxInviteCount: Infinity }, // Invite God
     ];
     const rolesToRemove: Collection<string, Role> = new Collection();
 
     const member = await guild.members.fetch(userId);
 
     for (const { role, minInviteCount, maxInviteCount } of rolesToAssign) {
-        const targetRole = guild.roles.cache.get(role);
+        const targetRole = guild.roles.cache.get(role!);
 
         if (!targetRole) {
             console.error(`Role not found for user ${userId} `);
@@ -97,6 +98,3 @@ async function removeRoles(rolesToRemove: Collection<string, Role>, member: Guil
         }
     }
 }
-client.on('guildMemberAdd', () => {
-    trackInvites();
-});
