@@ -511,7 +511,6 @@ async function findMatchingUser(userId: string, userResponses: number[], guild: 
         return null;
     }
 }
-
 function verifyUser(interaction: any, guild: Guild) {
     const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');

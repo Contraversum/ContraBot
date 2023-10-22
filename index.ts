@@ -5,13 +5,7 @@ import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey'
 import { google } from 'googleapis';
 import { client, db } from './common';
 import { executeMatch } from "./commands/match-command";
-import { trackInvites } from "./inviteTracker";
 
-client.on(Events.ClientReady, async (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
-    await db.connect();
-    await trackInvites();
-});
 client.login(process.env.TOKEN); // Log in to the bot
 
 client.on(Events.ClientReady, async c => {
