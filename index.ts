@@ -4,13 +4,15 @@ import { sendQuestion } from './commands/test/test-command';
 import { encrypt, decrypt } from './encryptionUtils';
 import { sendSurveyQuestions, Feedbackquestions } from './startSurvey';
 import * as fs from 'fs';
-import path from 'path'
+import path from 'path';
+import { trackInvites } from './inviteTracker';
 import { google } from 'googleapis';
 import { client, db, ClientWithCommands } from './common';
 
 client.on(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
     await db.connect();
+    await trackInvites();
 });
 client.login(process.env.TOKEN); // Log in to the bot
 
@@ -210,5 +212,8 @@ client.on(Events.MessageCreate, async (message) => {
     }
 });
 
+client.on('guildMemberAdd', () => {
+    trackInvites();
+});
 
 export { client, db };
