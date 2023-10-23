@@ -18,6 +18,6 @@ export const Feedbackquestions = [
 ];
 
 export async function sendSurveyQuestions(interaction: any) {
-    console.log("Starting survey for user " + interaction.user.id);
-    interaction.user.send(Feedbackquestions[0]);  // Send the first survey question
+    console.log(`Starting survey for user ${interaction.user.id}`);
+    interaction.user.send(Feedbackquestions[ 0 ]);  // Send the first survey question
 }

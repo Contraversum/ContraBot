@@ -1,46 +1,50 @@
 import 'dotenv/config'
 import { Events, REST, Routes } from 'discord.js';
-import { executeTest, sendQuestion, sendTestButton } from './commands/test-command';
+import { executeTest, sendQuestion } from './commands/test-command';
 import { sendSurveyQuestions, Feedbackquestions } from './functions/startSurvey';
 import { google } from 'googleapis';
 import { client, db } from './common';
 import { executeMatch } from "./commands/match-command";
+import { trackInvites } from "./inviteTracker";
+import { decrypt, encrypt } from "./encryptionUtils";
 
 client.login(process.env.TOKEN); // Log in to the bot
 
 client.on(Events.ClientReady, async c => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
     await db.connect();
-    sendTestButton()
+    //sendTestButton()
     //add later
     //client.user.setActivity("123", {ActivityType.Listening})
 
     const rest = new REST().setToken(process.env.TOKEN!);
 
-    (async () => {
-        try {
-            console.log('Started refreshing application (/) commands.');
+    try {
+        console.log('Started refreshing application (/) commands.');
 
-            await rest.put(Routes.applicationCommands(client.user!.id), {
-                body:
-                    [
-                        {
-                            name: 'match',
-                            description: 'Requests new match without retaking the test.'
-                        },
-                        {
-                            name: 'test',
-                            description: 'Asks the test questions!'
-                        },
-                    ]
-            });
+        await rest.put(Routes.applicationCommands(c.user.id), {
+            body:
+                [
+                    {
+                        name: 'match',
+                        description: 'Requests new match without retaking the test.'
+                    },
+                    {
+                        name: 'test',
+                        description: 'Asks the test questions!'
+                    },
+                ]
+        });
 
-            console.log('Successfully reloaded application (/) commands.');
-        } catch (error) {
-            console.error(error);
-        }
-    })();
+        console.log('Successfully reloaded application (/) commands.');
+    } catch (error) {
+        console.error(error);
+    }
 
+});
+
+client.on('guildMemberAdd', async () => {
+    await trackInvites();
 });
 
 // Catch command errors
@@ -75,7 +79,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (buttonId === 'start_survey') {
             await interaction.deferUpdate();
-            sendSurveyQuestions(interaction);
+            await sendSurveyQuestions(interaction);
 
             // Update context for this user in the database to indicate feedback process has started
             await db.db('contrabot').collection("users").updateOne(
@@ -90,7 +94,7 @@ client.on(Events.InteractionCreate, async interaction => {
             );
         } else if (buttonId === 'start_test') {
             await interaction.deferUpdate();
-            sendQuestion(interaction);
+            await sendQuestion(interaction);
         } else {
             // Fetch user's context from the database
             const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
@@ -114,7 +118,7 @@ client.on(Events.InteractionCreate, async interaction => {
             );
 
             await interaction.deferUpdate();
-            sendQuestion(interaction);
+            await sendQuestion(interaction);
         }
     }
 });
@@ -212,9 +216,3 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Error in Events.MessageCreate:", error);
     }
 });
-
-client.on('guildMemberAdd', async () => {
-    await trackInvites();
-});
-
-export { client, db };

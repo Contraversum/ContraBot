@@ -1,9 +1,5 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import { MongoClient } from "mongodb";
-
-export interface ClientWithCommands extends Client {
-    commands: Collection<string, any>
-}
 
 export const db = new MongoClient(process.env.MONGO_URL!);
 
@@ -14,6 +10,4 @@ export const client = new Client({
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMembers
     ]
-}) as ClientWithCommands;
-
-client.commands = new Collection();
+});

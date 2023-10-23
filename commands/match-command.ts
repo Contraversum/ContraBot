@@ -1,14 +1,14 @@
-import { SlashCommandBuilder, Guild } from 'discord.js';
 import { db } from '../common';
 import 'dotenv/config';
-import questions from '../questions';
+import questions from '../questions.json';
 import { sendQuestion } from './test-command';
+import { ChatInputCommandInteraction } from "discord.js";
 
-export async function executeMatch(interaction: any) {
+export async function executeMatch(interaction: ChatInputCommandInteraction) {
 
     const userContext = await db.db('contrabot').collection("users").findOne({ userId: interaction.user.id });
 
-    let userResponses = userContext?.userVector || [];
+    const userResponses = userContext?.userVector || [];
 
     // checks if the user has answered the test
     // if not, an error hint is displayed

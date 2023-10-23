@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Guild, GuildMember, Role, Collection } from 'discord.js';
-import { client, db } from './index';
+import { client, db } from "./common";
 
 export async function trackInvites() {
     const guildId = process.env.GUILD_ID;
@@ -8,7 +8,7 @@ export async function trackInvites() {
         console.error('GUILD_ID is not defined in .env');
         return;
     }
-    const guild: Guild | undefined = client.guilds.cache.get(guildId);
+    const guild = client.guilds.cache.get(guildId);
     if (!guild) {
         console.error('Guild not found');
         return;
@@ -35,7 +35,7 @@ export async function trackInvites() {
 
 
     // Update the user invite counts
-    const users = await db.db('contrabot').collection('users').find({}).toArray();
+    const users = await db.db('contrabot').collection('users').find().toArray();
 
     for (const user of users) {
         const userId = user.userId;
@@ -44,11 +44,11 @@ export async function trackInvites() {
             continue; // Skip this user and continue with others
         }
 
-        let inviteCount = inviteData[ userId ] || 0;
+        const inviteCount = inviteData[ userId ] || 0;
 
         // Update the invite count for the user in the database
         await db.db('contrabot').collection('users').updateOne(
-            { userId: userId },
+            { userId },
             { $set: { inviteCount } }
         );
 
