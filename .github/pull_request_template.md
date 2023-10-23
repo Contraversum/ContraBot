@@ -4,7 +4,8 @@ Fixes: #
 # Quick description of your approach:
 
 ## Checklist before requesting a review:
-- [ ] I have removed the comments fron the questions
+- [ ] I have removed the comments from the questions
+- [ ] I have changes all of the fixed ids to use the production id's
 - [ ] I have added comments to my code, particularly in hard-to-understand areas
 - [ ] I have removed all of the debugging 'console.logs'
 - [ ] I have ensured that all of my variables, functions, etc. are named sensibly (Are able to be understood by someone who has not seen my code before)

@@ -36,7 +36,7 @@ async function checkForFeedbackRequests() {
             Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern.
             Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
             der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
-                components: [ actionRow ]
+                components: [actionRow]
             });
 
             // Update context for this user in the database
@@ -71,7 +71,7 @@ export async function sendTestButton() {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [ actionRow ] }); // Channel Id for #How-to-basics
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
 };
 
 
@@ -85,7 +85,7 @@ async function sendTestReminder() {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        for (const [ userID, member ] of members) {
+        for (const [userID, member] of members) {
             const joinDate = member.joinedAt;
             if (!joinDate) continue;
 
@@ -134,7 +134,7 @@ export async function sendQuestion(interaction: any) {
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle(`Frage: ${currentQuestionDisplay}/38`)
-            .setDescription(questions[ currentQuestionIndex ].question)
+            .setDescription(questions[currentQuestionIndex].question)
             .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -153,8 +153,8 @@ export async function sendQuestion(interaction: any) {
         ]);
 
         interaction.user.send({
-            embeds: [ embed ],
-            components: [ builder ]
+            embeds: [embed],
+            components: [builder]
         });
 
         const encryptedUserVector = encrypt(JSON.stringify(userResponses));
