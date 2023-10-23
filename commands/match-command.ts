@@ -1,6 +1,6 @@
 import { db } from '../common';
 import 'dotenv/config';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { sendQuestion } from './test-command';
 import { ChatInputCommandInteraction } from "discord.js";
 

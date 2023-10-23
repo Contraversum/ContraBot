@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel, ChatInputCommandInteraction } from 'discord.js';
 import cron from 'cron';
 import 'dotenv/config';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { db, client } from "../common";
 import { encrypt, decrypt } from "../encryptionUtils";
 import { findMatchingUser } from "../functions/findMatchingUser";
@@ -202,7 +202,7 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
     if (bestMatchId) {
         const isMember = await guild.members.fetch(bestMatchId).then(() => true).catch(() => false);
         if (!isMember) {
-            await db.db('contrabot').collection("users").deleteOne({ bestMatchId });
+            await db.db('contrabot').collection("users").deleteOne({ userId: bestMatchId }); // Modified the key to userId for deletion
             console.log(`Deleted: userId ${bestMatchId} is no longer on the server.`);
             return await initiateConversation(interaction, userResponses);
         }
@@ -216,6 +216,13 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
 
     const bestMatch = await guild.members.fetch(bestMatchId);
     if (!bestMatch) throw new Error('bestMatch.GuildMember was not found');
+
+    // Fetch and decrypt bestMatch's userVector
+    const bestMatchData = await db.db('contrabot').collection("users").findOne({ userId: bestMatchId });
+    if (!bestMatchData || !bestMatchData.userVector) {
+        throw new Error(`UserVector for userId ${bestMatchId} was not found in the database`);
+    }
+    const bestMatchUserVector = JSON.parse(decrypt(bestMatchData.userVector));
 
     const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
     const channelName = `match-${interaction.user.username}-${bestMatch.user.username}`;
@@ -240,11 +247,11 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
         ViewChannel: false,
     });
 
-    await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.user.username} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+    await textChannel.send(`Hallo <@${interactionGuildMember.user.id}> 👋, hallo <@${bestMatch.user.id}> 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
     await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
 
-    // This function will send starter questions where they disagreed
-    conversationStarter(textChannel, interaction, bestMatch, userResponses);
+    // Pass bestMatchUserVector to conversationStarter
+    conversationStarter(textChannel, interaction, bestMatchUserVector, userResponses, bestMatchId);
 
     interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
     client.users.fetch(bestMatchId).then(user => {
