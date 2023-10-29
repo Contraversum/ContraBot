@@ -1,15 +1,19 @@
 import { EmbedBuilder, User } from 'discord.js';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { CronJob } from "cron";
 import { client, db } from "../common";
 
-export async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: any, user: number[]) {
+export async function conversationStarter(channelOfDestination: any, interaction: any, bestMatchUserVector: number[], userResponses: number[], bestMatchId: string) {
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
     const disagree: number[] = [];
 
-    user.forEach((value, i) => {
-        const total = value + bestMatch.userVector[ i ];
+    if (bestMatchUserVector == null) {
+        console.error("the BestMatch userVector is null")
+    }
+
+    userResponses.forEach((value, i) => {
+        const total = value + bestMatchUserVector[i];
         if (value !== 0 && total === 0) {
             disagree.push(i);
             addedToDisagree = true;
@@ -17,8 +21,8 @@ export async function conversationStarter(channelOfDestination: any, interaction
     });
     // Only add to disagree if the flag is still false
     if (!addedToDisagree || disagree.length < 6) {
-        user.forEach((value, i) => {
-            const total = value + bestMatch.userVector[ i ];
+        userResponses.forEach((value, i) => {
+            const total = value + bestMatchUserVector[i];
             if (Math.abs(total) === 1) {
                 disagree.push(i);
             }
@@ -33,7 +37,7 @@ export async function conversationStarter(channelOfDestination: any, interaction
 
     client.on('messageCreate', (message: any) => {
         if (message.channel.id === channelOfDestination.id) {
-            if (message.author.id === bestMatch.userId) {
+            if (message.author.id === bestMatchId) {
                 bestMatchSentMessage = true;
                 return;
             }
@@ -76,14 +80,14 @@ export async function conversationStarter(channelOfDestination: any, interaction
             if (!bestMatchSentMessage && conv.eightHourNotificationSent) {
                 //Send messages to both users
                 interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
-                client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+                client.users.fetch(String(bestMatchId)).then((user: User) => {
                     user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
                 });
 
                 // Delete the channel, conversation and BestMatch from the database
                 channelOfDestination.delete();
                 db.db('contrabot').collection("conversations").deleteOne({ _id: conv._id });
-                await db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+                await db.db('contrabot').collection("users").deleteOne({ userId: bestMatchId });
             }
         });
     });
@@ -91,7 +95,7 @@ export async function conversationStarter(channelOfDestination: any, interaction
 }
 
 function getRandomDisagreement(arr: number[], num: number) {
-    return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[ 0 ]);
+    return Array.from({ length: Math.min(num, arr.length) }, () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
 }
 
 function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
@@ -100,7 +104,7 @@ function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
             embeds: [
                 new EmbedBuilder()
                     .setTitle(`Frage: ${value + 1}/38`)
-                    .setDescription(questions[ value ].question)
+                    .setDescription(questions[value].question)
                     .setColor('#fb2364')
             ]
         });
@@ -108,7 +112,7 @@ function sendDisagreedQuestions(channelOfDestination: any, disagree: number[]) {
 
     // Make it so that the tags of the questions are printed properly
     const selectedTags = disagree
-        .map(index => questions[ index ].tag)
+        .map(index => questions[index].tag)
         .filter(tag => tag)
         .slice(0, 3);
 

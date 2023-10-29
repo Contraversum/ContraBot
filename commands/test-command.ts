@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel, ChatInputCommandInteraction } from 'discord.js';
 import cron from 'cron';
 import 'dotenv/config';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { db, client } from "../common";
 import { encrypt, decrypt } from "../encryptionUtils";
 import { findMatchingUser } from "../functions/findMatchingUser";
@@ -36,7 +36,7 @@ async function checkForFeedbackRequests() {
             Wir können Contraversum nur durch Feedback unserer Nutzerinnen und Nutzer verbessern.
             Daher wäre es ein wichtiger Beitrag für das Projekt und damit auch für die Depolarisierung
             der Gesellschaft, wenn du uns Feedback geben könntest. Es dauert weniger als 3 Minuten. Vielen Dank, dein ContraBot ❤️`,
-                components: [ actionRow ]
+                components: [actionRow]
             });
 
             // Update context for this user in the database
@@ -71,7 +71,7 @@ export async function sendTestButton() {
     const guild: Guild | undefined = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Guild not found');
 
-    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [ actionRow ] }); // Channel Id for #How-to-basics
+    (guild.channels.cache.get("1135557183845711983") as TextChannel).send({ components: [actionRow] }); // Channel Id for #How-to-basics
 };
 
 
@@ -85,7 +85,7 @@ async function sendTestReminder() {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        for (const [ userID, member ] of members) {
+        for (const [userID, member] of members) {
             const joinDate = member.joinedAt;
             if (!joinDate) continue;
 
@@ -134,7 +134,7 @@ export async function sendQuestion(interaction: any) {
     if (currentQuestionIndex < questions.length) {
         const embed = new EmbedBuilder()
             .setTitle(`Frage: ${currentQuestionDisplay}/38`)
-            .setDescription(questions[ currentQuestionIndex ].question)
+            .setDescription(questions[currentQuestionIndex].question)
             .setColor('#fb2364');
 
         const builder = new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -153,8 +153,8 @@ export async function sendQuestion(interaction: any) {
         ]);
 
         interaction.user.send({
-            embeds: [ embed ],
-            components: [ builder ]
+            embeds: [embed],
+            components: [builder]
         });
 
         const encryptedUserVector = encrypt(JSON.stringify(userResponses));
@@ -194,7 +194,7 @@ export async function sendQuestion(interaction: any) {
     );
 }
 
-async function initiateConversation(interaction: any, userResponses: number[]): Promise<any> {
+export async function initiateConversation(interaction: any, userResponses: number[]): Promise<any> {
     const guild = client.guilds.cache.get(process.env.GUILD_ID!)!;
 
     const bestMatchId = await findMatchingUser(interaction.user.id, userResponses);
@@ -202,7 +202,7 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
     if (bestMatchId) {
         const isMember = await guild.members.fetch(bestMatchId).then(() => true).catch(() => false);
         if (!isMember) {
-            await db.db('contrabot').collection("users").deleteOne({ bestMatchId });
+            await db.db('contrabot').collection("users").deleteOne({ userId: bestMatchId }); // Modified the key to userId for deletion
             console.log(`Deleted: userId ${bestMatchId} is no longer on the server.`);
             return await initiateConversation(interaction, userResponses);
         }
@@ -216,6 +216,13 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
 
     const bestMatch = await guild.members.fetch(bestMatchId);
     if (!bestMatch) throw new Error('bestMatch.GuildMember was not found');
+
+    // Fetch and decrypt bestMatch's userVector
+    const bestMatchData = await db.db('contrabot').collection("users").findOne({ userId: bestMatchId });
+    if (!bestMatchData || !bestMatchData.userVector) {
+        throw new Error(`UserVector for userId ${bestMatchId} was not found in the database`);
+    }
+    const bestMatchUserVector = JSON.parse(decrypt(bestMatchData.userVector));
 
     const matchesCategory = guild.channels.cache.find((category: any) => category.name === 'matches' && category.type === 4);
     const channelName = `match-${interaction.user.username}-${bestMatch.user.username}`;
@@ -240,11 +247,11 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
         ViewChannel: false,
     });
 
-    await textChannel.send(`Hallo ${interactionGuildMember} 👋, hallo ${bestMatch.user.username} 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
+    await textChannel.send(`Hallo <@${interactionGuildMember.user.id}> 👋, hallo <@${bestMatch.user.id}> 👋, basierend auf unserem Algorithmus wurdet ihr als Gesprächspartner ausgewählt. Bitte vergesst nicht respektvoll zu bleiben. Viel Spaß bei eurem Match!`);
     await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
 
-    // This function will send starter questions where they disagreed
-    conversationStarter(textChannel, interaction, bestMatch, userResponses);
+    // Pass bestMatchUserVector to conversationStarter
+    conversationStarter(textChannel, interaction, bestMatchUserVector, userResponses, bestMatchId);
 
     interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
     client.users.fetch(bestMatchId).then(user => {
@@ -265,7 +272,7 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);

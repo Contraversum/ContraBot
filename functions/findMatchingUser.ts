@@ -1,11 +1,24 @@
 import { db } from '../common';
 import { decrypt } from "../encryptionUtils";
 
-export async function findMatchingUser(userId: string, userResponses: number[]): Promise<string | null> {
+export async function findMatchingUser(userId: string, userResponses: any[]): Promise<string | null> {
     if (userResponses.length === 0) {
         console.log("No User Responses");
         return null;
     }
+
+    // Fetch users the current user has interacted with
+    const conversations = await db.db('contrabot').collection("conversations").find({
+        $or: [
+            { interactionUserId: userId },
+            { bestMatchUserId: userId }
+        ]
+    }).toArray();
+
+    // Create a set of userIds that the current user has interacted with
+    const interactedUserIds = new Set(conversations.map(conv => {
+        return conv.interactionUserId === userId ? conv.bestMatchUserId : conv.interactionUserId;
+    }));
 
     const users = await db.db('contrabot').collection("users").find().toArray();
 
@@ -15,6 +28,10 @@ export async function findMatchingUser(userId: string, userResponses: number[]):
     for (const user of users) {
         if (user.userId === userId)
             continue;
+        if (interactedUserIds.has(user.userId)) {
+            console.log(`Skipped: userId ${user.userId} has already interacted with userId ${userId}`);
+            continue;
+        }
 
         let decryptedUserVector: number[]; // Explicit type declaration
         if (typeof user.userVector === 'string') { // Check if it's a string
@@ -29,14 +46,13 @@ export async function findMatchingUser(userId: string, userResponses: number[]):
             continue;
         }
 
-
         if (!Array.isArray(decryptedUserVector) || decryptedUserVector.length === 0) {
             console.log(`Skipped: Missing or invalid decrypted userVector for userId ${user.userId}`);
             continue;
         }
 
         const differenceScore = userResponses.reduce((acc, value, index) => {
-            return acc + value * decryptedUserVector[ index ];
+            return acc + value * decryptedUserVector[index];
         }, 0);
 
         if (differenceScore < lowestDifferenceScore) {
