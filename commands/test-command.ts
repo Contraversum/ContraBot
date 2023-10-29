@@ -194,7 +194,7 @@ export async function sendQuestion(interaction: any) {
     );
 }
 
-async function initiateConversation(interaction: any, userResponses: number[]): Promise<any> {
+export async function initiateConversation(interaction: any, userResponses: number[]): Promise<any> {
     const guild = client.guilds.cache.get(process.env.GUILD_ID!)!;
 
     const bestMatchId = await findMatchingUser(interaction.user.id, userResponses);
@@ -272,7 +272,7 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
 }
 
 function verifyUser(interaction: any, guild: Guild) {
-    const role: Role | undefined = guild.roles.cache.get('1153647196449820755'); // Verified role: 1143590879274213486
+    const role: Role | undefined = guild.roles.cache.get('1143590879274213486'); // Verified role: 1143590879274213486
     if (!role) throw new Error('Role not found');
 
     const interactionGuildMember = guild.members.cache.get(interaction.user.id);
