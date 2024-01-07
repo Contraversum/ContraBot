@@ -1,0 +1,14 @@
+{
+    "_id": {
+      "$oid": "759ab26b3fd442f53a3b88ec"
+    },
+    "userId": "371292275613106180",
+    "currentFeedbackQuestionIndex": 0,
+    "currentQuestionIndex": 0,
+    "feedbackRequestSent": false,
+    "invited": null,
+    "joined": null,
+    "userVector": "67a556146ca69b1b15173c187b18d7cf:6c54dec958fb39a6fae7ae56f6afd116",
+    "username": "KoTenshi",
+    "completionTime": "2024-01-07T14:17:32.628Z"
+}

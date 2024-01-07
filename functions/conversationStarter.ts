@@ -3,13 +3,15 @@ import { questions } from '../questions';
 import { CronJob } from "cron";
 import { client, db } from "../common";
 
-export async function conversationStarter(channelOfDestination: any, interaction: any, bestMatch: any, user: number[]) {
+export async function conversationStarter(channelOfDestination: any, interaction: any, bestMatchUserResponses: any, bestMatchId: any, user: number[]) {
+    console.log(user);
+    console.log(bestMatchUserResponses);
     // get all contrasting and similar answers
     let addedToDisagree = false; // Track if any numbers were added to disagree
     const disagree: number[] = [];
 
     user.forEach((value, i) => {
-        const total = value + bestMatch.userVector[ i ];
+        const total = value + bestMatchUserResponses[ i ];
         if (value !== 0 && total === 0) {
             disagree.push(i);
             addedToDisagree = true;
@@ -18,7 +20,7 @@ export async function conversationStarter(channelOfDestination: any, interaction
     // Only add to disagree if the flag is still false
     if (!addedToDisagree || disagree.length < 6) {
         user.forEach((value, i) => {
-            const total = value + bestMatch.userVector[ i ];
+            const total = value + bestMatchUserResponses[ i ];
             if (Math.abs(total) === 1) {
                 disagree.push(i);
             }
@@ -33,7 +35,7 @@ export async function conversationStarter(channelOfDestination: any, interaction
 
     client.on('messageCreate', (message: any) => {
         if (message.channel.id === channelOfDestination.id) {
-            if (message.author.id === bestMatch.userId) {
+            if (message.author.id === bestMatchId) {
                 bestMatchSentMessage = true;
                 return;
             }
@@ -76,14 +78,14 @@ export async function conversationStarter(channelOfDestination: any, interaction
             if (!bestMatchSentMessage && conv.eightHourNotificationSent) {
                 //Send messages to both users
                 interaction.user.send(`Dein Gesprächspartner hat das Gespräch verlassen. Wir finden einen neuen Gesprächspartner für dich.`);
-                client.users.fetch(String(bestMatch.userId)).then((user: User) => {
+                client.users.fetch(String(bestMatchUserResponses)).then((user: User) => {
                     user.send(`Aufgrund von Inaktivität wurde das Gespräch beendet. Bitte starte einen neuen Test, um einen neuen Gesprächspartner zu finden.`);
                 });
 
                 // Delete the channel, conversation and BestMatch from the database
                 channelOfDestination.delete();
                 db.db('contrabot').collection("conversations").deleteOne({ _id: conv._id });
-                await db.db('contrabot').collection("users").deleteOne({ userId: bestMatch.userId });
+                await db.db('contrabot').collection("users").deleteOne({ userId: bestMatchId });
             }
         });
     });

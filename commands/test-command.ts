@@ -244,7 +244,11 @@ async function initiateConversation(interaction: any, userResponses: number[]): 
     await textChannel.send(`Bei beispielsweise diesen drei Fragen seid ihr nicht einer Meinung:`);
 
     // This function will send starter questions where they disagreed
-    conversationStarter(textChannel, interaction, bestMatch, userResponses);
+    // fetch the encrypted userVector from the database for the bestMatch and decrypt it
+    const bestMatchUserContext = await db.db('contrabot').collection("users").findOne({ userId: bestMatchId });
+    const bestMatchUserResponses = bestMatchUserContext?.userVector ? JSON.parse(decrypt(bestMatchUserContext.userVector)) : [];
+  
+    conversationStarter(textChannel, interaction, bestMatchUserResponses, bestMatchId, userResponses);
 
     interaction.user.send(`Du wurdest erfolgreich mit **@${bestMatch.user.username}** gematcht. Schau auf den Discord-Server um mit dem Chatten zu beginnen! 😊`);
     client.users.fetch(bestMatchId).then(user => {
