@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Guild, Role, User, TextChannel, ChatInputCommandInteraction } from 'discord.js';
 import cron from 'cron';
 import 'dotenv/config';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { db, client } from "../common";
 import { encrypt, decrypt } from "../encryptionUtils";
 import { findMatchingUser } from "../functions/findMatchingUser";

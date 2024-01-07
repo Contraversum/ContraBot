@@ -1,4 +1,4 @@
-[
+export const questions = [
     { "question": "Auf allen Autobahnen soll ein generelles Tempolimit gelten.", "tag": ["Verkehrssicherheit", " Klimawandel"] },
     { "question": "Deutschland soll seine Verteidigungsausgaben erhöhen.", "tag": "Verteidigungspolitik" },
     { "question": "Bei Bundestagswahlen sollen auch Jugendliche ab 16 Jahren wählen dürfen.", "tag": ["Wahlalter", "Demokratie"] },

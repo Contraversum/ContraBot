@@ -1,5 +1,5 @@
 import { EmbedBuilder, User } from 'discord.js';
-import questions from '../questions.json';
+import { questions } from '../questions';
 import { CronJob } from "cron";
 import { client, db } from "../common";
 
